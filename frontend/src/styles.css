@@ -1,0 +1,183 @@
+/* ChatWindow styling */
+.flex {
+    display: flex;
+  }
+  
+  .flex-col {
+    flex-direction: column;
+  }
+  
+  .h-screen {
+    height: 100vh;
+  }
+  
+  .bg-gray-900 {
+    background-color: #1e1e1e;
+  }
+  
+  .text-white {
+    color: white;
+  }
+  
+  .overflow-y-auto {
+    overflow-y: auto;
+  }
+  
+  .p-4 {
+    padding: 16px;
+  }
+
+  /* Messages styling */
+.my-2 {
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+  
+  .max-w-2xl {
+    max-width: 42rem; /* Limite la largeur des messages */
+  }
+  
+  .px-4 {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  .py-2 {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  
+  .rounded-lg {
+    border-radius: 12px;
+  }
+  
+  .shadow-md {
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* User message */
+  .bg-blue-500 {
+    background-color: #2563eb; /* Bleu */
+    color: white;
+  }
+  
+  /* AI message */
+  .bg-gray-700 {
+    background-color: #374151; /* Gris foncé */
+    color: white;
+  }
+
+  /* Sidebar styling */
+.w-64 {
+    width: 16rem;
+  }
+  
+  .h-screen {
+    height: 100vh;
+  }
+  
+  .bg-gray-900 {
+    background-color: #1e1e1e;
+  }
+  
+  .text-white {
+    color: white;
+  }
+  
+  .p-4 {
+    padding: 16px;
+  }
+  
+  .shadow-lg {
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Bouton "Nouvelle conversation" */
+  .bg-blue-500 {
+    background-color: #2563eb;
+  }
+  
+  .hover\:bg-blue-600:hover {
+    background-color: #1d4ed8;
+  }
+  
+  .text-gray-400 {
+    color: #9ca3af;
+  }
+  
+  .hover\:bg-gray-700:hover {
+    background-color: #374151;
+  }
+  
+  .cursor-pointer {
+    cursor: pointer;
+  }
+
+  /* InputBox styling */
+.bg-gray-800 {
+    background-color: #2d2d2d;
+  }
+  
+  .bg-gray-700 {
+    background-color: #3a3a3a;
+  }
+  
+  .text-white {
+    color: white;
+  }
+  
+  .p-2 {
+    padding: 8px;
+  }
+  
+  .p-4 {
+    padding: 16px;
+  }
+  
+  .rounded-lg {
+    border-radius: 12px;
+  }
+  
+  .outline-none {
+    outline: none;
+  }
+  
+  .border-t {
+    border-top-width: 1px;
+  }
+  
+  .border-gray-700 {
+    border-color: #4b5563;
+  }
+  
+  .ml-3 {
+    margin-left: 12px;
+  }
+  
+  .transition {
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Typing loader animation */
+.animate-bounce {
+    animation: bounce 1.5s infinite;
+  }
+  
+  .delay-100 {
+    animation-delay: 0.2s;
+  }
+  
+  .delay-200 {
+    animation-delay: 0.4s;
+  }
+  
+  @keyframes bounce {
+    0%, 80%, 100% {
+      transform: scale(0);
+      opacity: 0.3;
+    }
+    40% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }

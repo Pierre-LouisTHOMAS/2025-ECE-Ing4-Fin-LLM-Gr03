@@ -18,6 +18,18 @@ const InputBoxStatique: React.FC<InputBoxStatiqueProps> = ({ onSend }) => {
   return (
     <div className="input-box">
       <input
+        type="file"
+        id="fileUpload"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            console.log('Fichier sélectionné:', file);
+          }
+        }}
+      />
+      <label htmlFor="fileUpload" className="file-upload-btn">📎</label>
+      <input
         type="text"
         placeholder="Écris ton message..."
         value={input}

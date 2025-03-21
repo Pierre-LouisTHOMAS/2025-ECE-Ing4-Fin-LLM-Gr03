@@ -44,3 +44,24 @@
 .file-upload-btn:hover {
   transform: scale(1.2);
 }
+.file-preview {
+  background-color: rgba(255, 0, 255, 0.1);
+  border: 1px solid #ff00ff;
+  border-radius: 10px;
+  padding: 10px;
+  margin: 0 15px 10px 15px;
+  text-align: center;
+  color: #ff00ff;
+  box-shadow: 0 0 10px #ff00ff88;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 150px;
+  border-radius: 8px;
+}
+
+.preview-file {
+  font-size: 14px;
+  word-break: break-word;
+}

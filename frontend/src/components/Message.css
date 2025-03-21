@@ -1,0 +1,28 @@
+.message {
+  max-width: 70%;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  backdrop-filter: blur(6px);
+  margin: 0 10px;
+}
+
+.message.user {
+  background-color: #ff00ff33;
+  color: #ff00ff;
+  align-self: flex-end;
+  border: 1px solid #ff00ff;
+  box-shadow: 0 0 12px #ff00ff88;
+  margin-right: 20px;
+}
+
+.message.bot {
+  background-color: #8a2be233;
+  color: #8a2be2;
+  align-self: flex-start;
+  border: 1px solid #8a2be2;
+  box-shadow: 0 0 12px #8a2be288;
+  margin-left: 20px;
+}

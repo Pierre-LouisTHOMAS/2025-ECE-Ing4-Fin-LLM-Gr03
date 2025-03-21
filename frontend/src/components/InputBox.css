@@ -1,0 +1,29 @@
+.input-box {
+  display: flex;
+  border-top: 1px solid #8a2be2;
+  background-color: rgba(10, 10, 20, 0.95);
+}
+
+.input-box input {
+  flex: 1;
+  padding: 15px;
+  border: none;
+  background-color: #1f1f2e;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+}
+
+.input-box button {
+  background-color: #ff00ff;
+  color: #0a0a23;
+  border: none;
+  padding: 0 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.input-box button:hover {
+  background-color: #d400d4;
+}

@@ -22,10 +22,11 @@ export interface MessageType {
    * @param messages - Liste des messages.
    */
   export const saveConversation = (conversationId: string, title: string, messages: MessageType[]) => {
-    const conversations = getConversations();
-    const updatedConversations = conversations.filter((conv) => conv.id !== conversationId);
-    updatedConversations.push({ id: conversationId, title, messages });
+    const conversations = getConversations().filter((conv) => conv.id !== conversationId);
+    const updatedConversations = [...conversations, { id: conversationId, title, messages }];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedConversations));
+  
+    console.log("📌 Conversation sauvegardée :", updatedConversations);
   };
   
   /**

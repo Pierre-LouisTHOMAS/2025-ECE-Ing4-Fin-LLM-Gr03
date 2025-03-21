@@ -1,11 +1,5 @@
-import { getConversations } from "../services/storage";
-import { useEffect, useState } from "react";
+import React from "react";
 
-const [conversations, setConversations] = useState([]);
-
-useEffect(() => {
-  setConversations(getConversations());
-}, []);
 interface SidebarProps {
   conversations: { id: string; title: string }[];
   onSelectConversation: (id: string) => void;

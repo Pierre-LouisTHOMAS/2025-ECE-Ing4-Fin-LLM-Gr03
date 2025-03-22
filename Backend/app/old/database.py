@@ -1,8 +1,9 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 import os
 from pathlib import Path
+from datetime import datetime
 
 # Création du répertoire de données s'il n'existe pas
 data_dir = Path("./data")
@@ -37,6 +38,20 @@ class Message(Base):
     text = Column(Text)
     
     conversation = relationship("Conversation", back_populates="messages")
+
+# Modèle pour stocker les souvenirs extraits des conversations
+class ConversationMemory(Base):
+    __tablename__ = "conversation_memories"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(String, ForeignKey("conversations.id"), index=True)
+    key = Column(String, index=True)  # Type d'information (nom, préférence, etc.)
+    value = Column(Text)  # Valeur de l'information
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    # Relation avec la conversation
+    conversation = relationship("Conversation")
 
 # Création des tables
 Base.metadata.create_all(bind=engine)

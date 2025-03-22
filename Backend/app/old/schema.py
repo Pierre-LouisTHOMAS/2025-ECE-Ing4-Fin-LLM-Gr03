@@ -1,10 +1,17 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
+
+# Schéma pour les messages de l'historique
+class MessageHistory(BaseModel):
+    role: str  # 'user' ou 'assistant'
+    content: str
 
 # Schéma pour les requêtes de chat
 class ChatRequest(BaseModel):
     message: str
+    conversation_id: Optional[str] = "default_conversation"
+    history: Optional[List[MessageHistory]] = []
 
 # Schéma pour les messages
 class MessageBase(BaseModel):
@@ -35,6 +42,23 @@ class Conversation(ConversationBase):
     id: str
     created_at: str
     messages: List[Message] = []
+
+    class Config:
+        orm_mode = True
+
+# Schéma pour les souvenirs de conversation
+class ConversationMemoryBase(BaseModel):
+    key: str
+    value: str
+
+class ConversationMemoryCreate(ConversationMemoryBase):
+    pass
+
+class ConversationMemory(ConversationMemoryBase):
+    id: int
+    conversation_id: str
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         orm_mode = True

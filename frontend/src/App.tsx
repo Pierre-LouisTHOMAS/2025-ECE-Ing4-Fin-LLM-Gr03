@@ -28,9 +28,17 @@ const App: React.FC = () => {
         const loadedConversations = await getConversations();
         setConversations(loadedConversations);
         
-        // Sélectionner la conversation la plus récente s'il y en a
-        if (loadedConversations.length > 0) {
-          setCurrentConversationId(loadedConversations[loadedConversations.length - 1].id);
+        // Vérifier s'il y a un ID de conversation enregistré dans le localStorage
+        const savedConversationId = localStorage.getItem('currentConversationId');
+        
+        if (savedConversationId && loadedConversations.some(conv => conv.id === savedConversationId)) {
+          // Si l'ID sauvegardé existe dans les conversations chargées, l'utiliser
+          setCurrentConversationId(savedConversationId);
+        } else if (loadedConversations.length > 0) {
+          // Sinon, sélectionner la conversation la plus récente
+          const latestConversationId = loadedConversations[loadedConversations.length - 1].id;
+          setCurrentConversationId(latestConversationId);
+          localStorage.setItem('currentConversationId', latestConversationId);
         }
       } catch (error) {
         console.error("Erreur lors du chargement des conversations :", error);
@@ -70,6 +78,9 @@ const App: React.FC = () => {
         setConversations(prev => [...prev, { id: newConversation.id, title: newConversation.title }]);
         setCurrentConversationId(newConversation.id);
         
+        // Sauvegarder l'ID de la nouvelle conversation dans le localStorage
+        localStorage.setItem('currentConversationId', newConversation.id);
+        
         // Fermer la sidebar en mode mobile après avoir sélectionné une conversation
         if (isMobile) {
           setIsSidebarOpen(false);
@@ -82,6 +93,9 @@ const App: React.FC = () => {
 
   const handleSelectConversation = (id: string) => {
     setCurrentConversationId(id);
+    
+    // Sauvegarder l'ID de la conversation sélectionnée dans le localStorage
+    localStorage.setItem('currentConversationId', id);
     
     // Fermer la sidebar en mode mobile après avoir sélectionné une conversation
     if (isMobile) {

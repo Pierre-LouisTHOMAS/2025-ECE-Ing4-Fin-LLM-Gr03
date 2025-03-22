@@ -11,20 +11,9 @@ const SendIcon = () => (
   </svg>
 );
 
-const PDFIcon = () => (
+const PaperclipIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M14 2V8H20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M9 15H15" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M9 18H12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const ImageIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <circle cx="8.5" cy="8.5" r="1.5" fill="white" />
-    <path d="M21 15L16 10L5 21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M21.44 11.05L12.25 20.24C11.1242 21.3658 9.59718 21.9983 8.005 21.9983C6.41282 21.9983 4.88584 21.3658 3.76 20.24C2.63416 19.1142 2.00166 17.5872 2.00166 15.995C2.00166 14.4028 2.63416 12.8758 3.76 11.75L12.33 3.18C13.0806 2.42925 14.0991 2.00015 15.16 2.00015C16.2209 2.00015 17.2394 2.42925 17.99 3.18C18.7408 3.93063 19.1699 4.94915 19.1699 6.01C19.1699 7.07085 18.7408 8.08937 17.99 8.84L9.41 17.41C9.03472 17.7853 8.52573 17.9961 7.995 17.9961C7.46427 17.9961 6.95528 17.7853 6.58 17.41C6.20472 17.0347 5.99389 16.5257 5.99389 15.995C5.99389 15.4643 6.20472 14.9553 6.58 14.58L15.07 6.1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -85,11 +74,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileType, setFileType] = useState<'pdf' | 'image' | null>(null);
+  const [fileType, setFileType] = useState<'file' | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Ajuster automatiquement la hauteur du textarea
   useEffect(() => {
@@ -137,35 +125,34 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
     loadConversationMessages();
   }, [conversationId]);
 
+  const [fileName, setFileName] = useState<string | null>(null);
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      if (file.type === 'application/pdf' && fileType === 'pdf') {
+      const fileType = file.type;
+      
+      if (fileType === 'application/pdf' || fileType.startsWith('image/')) {
         setSelectedFile(file);
-        // Afficher le nom du fichier dans le champ de texte
-        setInputText(`Fichier PDF sélectionné: ${file.name}`);
-      } else if (['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type) && fileType === 'image') {
-        setSelectedFile(file);
-        // Afficher le nom du fichier dans le champ de texte
-        setInputText(`Image sélectionnée: ${file.name}`);
+        setFileName(file.name);
+        // Ne pas modifier le champ de texte pour permettre à l'utilisateur de saisir sa question
+        setInputText("");
       } else {
-        setError("Veuillez sélectionner un fichier valide.");
+        setError("Veuillez sélectionner un fichier PDF ou une image (PNG, JPG, JPEG, WEBP).");
         setSelectedFile(null);
+        setFileName(null);
       }
     }
   };
 
-  const handlePDFUpload = () => {
-    setFileType('pdf');
+  const handleFileUpload = () => {
+    // Réinitialiser l'input file avant de l'ouvrir pour éviter les problèmes
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setFileType('file');
     if (fileInputRef.current) {
       fileInputRef.current.click();
-    }
-  };
-  
-  const handleImageUpload = () => {
-    setFileType('image');
-    if (imageInputRef.current) {
-      imageInputRef.current.click();
     }
   };
 
@@ -182,9 +169,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
         let fileText = "";
         let response = "";
         
-        if (fileType === 'pdf') {
+        if (selectedFile.type === 'application/pdf') {
           // Cas d'un fichier PDF
-          fileText = `J'ai envoyé un fichier PDF: ${selectedFile.name}`;
+          const question = inputText.trim() ? inputText : '';
+          fileText = question ? 
+            `J'ai envoyé un fichier PDF: ${selectedFile.name}\n\nMa question: ${question}` : 
+            `J'ai envoyé un fichier PDF: ${selectedFile.name}`;
+          
           userMessage = { id: userMessageId, sender: "user", text: fileText };
           
           // Affichage du message utilisateur et indicateur de chargement
@@ -194,12 +185,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
           // Réinitialisation du champ de saisie
           setInputText("");
           
-          // Envoi du fichier PDF au backend
-          console.log("📄 Envoi du PDF au modèle :", selectedFile.name);
-          response = await fetchAIResponseWithPDF(selectedFile);
-        } else if (fileType === 'image') {
+          // Envoi du fichier PDF au backend avec l'historique des messages
+          console.log("📄 Envoi du PDF au modèle avec historique et ID de conversation:", { fileName: selectedFile.name, conversationId });
+          // Envoyer l'historique des messages précédents (jusqu'à 10 derniers messages)
+          const messageHistory = messages.slice(-10);
+          // S'assurer que conversationId est une chaîne de caractères valide
+          const safeConversationId = conversationId || Date.now().toString();
+          response = await fetchAIResponseWithPDF(selectedFile, safeConversationId, question, messageHistory);
+        } else if (selectedFile.type.startsWith('image/')) {
           // Cas d'une image
-          fileText = `J'ai envoyé une image: ${selectedFile.name}`;
+          const question = inputText.trim() ? inputText : '';
+          fileText = question ? 
+            `J'ai envoyé une image: ${selectedFile.name}\n\nMa question: ${question}` : 
+            `J'ai envoyé une image: ${selectedFile.name}`;
+          
           userMessage = { id: userMessageId, sender: "user", text: fileText };
           
           // Affichage du message utilisateur et indicateur de chargement
@@ -209,14 +208,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
           // Réinitialisation du champ de saisie
           setInputText("");
           
-          // Envoi de l'image au backend
-          console.log("🖼️ Envoi de l'image au modèle :", selectedFile.name);
-          response = await fetchAIResponseWithImage(selectedFile);
+          // Envoi de l'image au backend avec l'historique des messages
+          console.log("🖼️ Envoi de l'image au modèle avec historique et ID de conversation:", { fileName: selectedFile.name, conversationId });
+          // Envoyer l'historique des messages précédents (jusqu'à 10 derniers messages)
+          const messageHistory = messages.slice(-10);
+          // S'assurer que conversationId est une chaîne de caractères valide
+          const safeConversationId = conversationId || Date.now().toString();
+          response = await fetchAIResponseWithImage(selectedFile, safeConversationId, question, messageHistory);
         }
         
-        // Réinitialiser le fichier sélectionné et le type
+        // Réinitialiser le fichier sélectionné, le type et le nom
         setSelectedFile(null);
         setFileType(null);
+        setFileName(null);
         
         // Création du message de réponse de l'IA avec un ID unique
         const aiMessageId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}-ai`;
@@ -252,9 +256,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
         // Réinitialisation du champ de saisie
         setInputText("");
         
-        // Envoi du message texte au backend
-        console.log("💬 Envoi du message au modèle :", inputText.trim());
-        const response = await fetchAIResponse(inputText.trim());
+        // Envoi du message texte au backend avec l'historique des messages et ID de conversation
+        console.log("💬 Envoi du message au modèle avec historique et ID de conversation:", { message: inputText.trim(), conversationId });
+        // Envoyer l'historique des messages précédents (jusqu'à 10 derniers messages)
+        const messageHistory = messages.slice(-10);
+        // S'assurer que conversationId est une chaîne de caractères valide
+        const safeConversationId = conversationId || Date.now().toString();
+        const response = await fetchAIResponse(inputText.trim(), safeConversationId, messageHistory);
         
         // Création du message de réponse de l'IA avec un ID unique
         const aiMessageId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}-ai`;
@@ -498,7 +506,70 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
       
       {/* Zone de saisie */}
       <div className="chat-footer">
-        <div className="input-container">
+        {fileName && (
+          <div style={{ 
+            padding: '4px 8px', 
+            fontSize: '12px', 
+            color: '#ffffff', 
+            backgroundColor: '#4a5568', 
+            borderRadius: '4px', 
+            marginBottom: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span>Fichier sélectionné: {fileName}</span>
+            <button 
+              onClick={() => {
+                setSelectedFile(null);
+                setFileName(null);
+                setFileType(null);
+                // Réinitialiser l'input file pour permettre la sélection du même fichier
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = '';
+                }
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '14px',
+                padding: '0 4px'
+              }}
+              title="Désélectionner le fichier"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+        <div className="input-container" style={{ display: 'flex', alignItems: 'center' }}>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            style={{ display: 'none' }} 
+            accept="application/pdf,.jpg,.jpeg,.png,.webp" 
+            onChange={handleFileSelect} 
+          />
+          <button 
+            className="file-button" 
+            onClick={handleFileUpload}
+            title="Joindre un fichier (PDF, PNG, JPG, JPEG, WEBP)"
+            disabled={isTyping}
+            style={{ 
+              background: 'transparent', 
+              border: 'none', 
+              cursor: 'pointer',
+              opacity: isTyping ? 0.5 : 1,
+              padding: '0 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%'
+            }}
+          >
+            <PaperclipIcon />
+          </button>
           <textarea
             ref={textareaRef}
             className="input-textarea"
@@ -507,28 +578,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
+            style={{ flex: 1 }}
           />
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            style={{ display: 'none' }} 
-            accept="application/pdf" 
-            onChange={handleFileSelect} 
-          />
-          <button 
-            className="pdf-button" 
-            onClick={handlePDFUpload}
-            title="Envoyer un fichier PDF"
-            disabled={isTyping}
-            style={{ 
-              background: 'transparent', 
-              border: 'none', 
-              cursor: 'pointer',
-              opacity: isTyping ? 0.5 : 1
-            }}
-          >
-            <PDFIcon />
-          </button>
           <button 
             className="send-button" 
             onClick={handleSendMessage}

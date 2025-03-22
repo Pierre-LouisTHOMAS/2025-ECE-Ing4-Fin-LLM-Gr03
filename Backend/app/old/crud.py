@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from . import database, schema
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 # Opérations pour les conversations
 def get_conversation(db: Session, conversation_id: str):
@@ -107,3 +107,53 @@ def save_conversation_with_messages(db: Session, conversation_id: str, title: st
     db.commit()
     db.refresh(db_conversation)
     return db_conversation
+
+# Opérations pour les souvenirs de conversation
+def get_conversation_memories(db: Session, conversation_id: str):
+    """Récupère tous les souvenirs d'une conversation"""
+    return db.query(database.ConversationMemory).filter(
+        database.ConversationMemory.conversation_id == conversation_id
+    ).all()
+
+def get_memory_by_key(db: Session, conversation_id: str, key: str):
+    """Récupère un souvenir spécifique par sa clé"""
+    return db.query(database.ConversationMemory).filter(
+        database.ConversationMemory.conversation_id == conversation_id,
+        database.ConversationMemory.key == key
+    ).first()
+
+def create_or_update_memory(db: Session, conversation_id: str, key: str, value: str):
+    """Crée ou met à jour un souvenir dans une conversation"""
+    # Vérifier si le souvenir existe déjà
+    memory = get_memory_by_key(db, conversation_id, key)
+    
+    if memory:
+        # Mettre à jour la valeur
+        memory.value = value
+        memory.updated_at = datetime.now()
+    else:
+        # Créer un nouveau souvenir
+        memory = database.ConversationMemory(
+            conversation_id=conversation_id,
+            key=key,
+            value=value
+        )
+        db.add(memory)
+    
+    db.commit()
+    db.refresh(memory)
+    return memory
+
+def delete_memory(db: Session, conversation_id: str, key: str):
+    """Supprime un souvenir spécifique"""
+    memory = get_memory_by_key(db, conversation_id, key)
+    if memory:
+        db.delete(memory)
+        db.commit()
+        return True
+    return False
+
+def get_memories_as_dict(db: Session, conversation_id: str) -> Dict[str, str]:
+    """Récupère tous les souvenirs d'une conversation sous forme de dictionnaire"""
+    memories = get_conversation_memories(db, conversation_id)
+    return {memory.key: memory.value for memory in memories}

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // Configuration de base de l'API
-const BASE_URL = "http://localhost:8003"; // Utilisation de localhost pour une meilleure compatibilité avec le navigateur
+const BASE_URL = "http://localhost:8000"; // Utilisation de localhost pour une meilleure compatibilité avec le navigateur
 const CHAT_URL = `${BASE_URL}/chat`;
 const PDF_CHAT_URL = `${BASE_URL}/chat-pdf`;
 const IMAGE_CHAT_URL = `${BASE_URL}/chat-image`;
@@ -25,13 +25,20 @@ interface ApiResponse {
   response: string;
 }
 
-// Fonction pour obtenir une réponse de l'IA
-export const fetchAIResponse = async (message: string): Promise<string> => {
+// Fonction pour obtenir une réponse de l'IA avec historique des messages
+export const fetchAIResponse = async (message: string, conversationId: string, messageHistory: { sender: string, text: string }[] = []): Promise<string> => {
   try {
-    console.log("📤 Envoi de la requête au backend :", { message });
+    console.log("📤 Envoi de la requête au backend avec historique et ID de conversation:", { message, conversationId, historyLength: messageHistory.length });
     
     // Configuration explicite pour CORS
-    const response = await axios.post<ApiResponse>(CHAT_URL, { message }, {
+    const response = await axios.post<ApiResponse>(CHAT_URL, { 
+      message, 
+      conversation_id: conversationId,
+      history: messageHistory.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      }))
+    }, {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
@@ -144,13 +151,28 @@ export const deleteConversation = async (id: string): Promise<boolean> => {
 };
 
 // Fonction pour envoyer un fichier PDF et obtenir une réponse de l'IA
-export const fetchAIResponseWithPDF = async (file: File): Promise<string> => {
+export const fetchAIResponseWithPDF = async (file: File, conversationId: string, question?: string, messageHistory: { sender: string, text: string }[] = []): Promise<string> => {
   try {
-    console.log("📄 Envoi du fichier PDF au backend :", { fileName: file.name, fileSize: file.size });
+    console.log("📄 Envoi du fichier PDF au backend :", { fileName: file.name, fileSize: file.size, conversationId, question, historyLength: messageHistory.length });
     
     // Création d'un FormData pour envoyer le fichier
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('conversation_id', conversationId);
+    
+    // Ajouter la question si elle existe
+    if (question && question.trim() !== '') {
+      formData.append('question', question);
+    }
+    
+    // Ajouter l'historique des messages au format JSON
+    if (messageHistory.length > 0) {
+      const history = messageHistory.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      }));
+      formData.append('history', JSON.stringify(history));
+    }
     
     // Configuration explicite pour CORS avec FormData
     const response = await axios.post<ApiResponse>(PDF_CHAT_URL, formData, {
@@ -186,13 +208,28 @@ export const fetchAIResponseWithPDF = async (file: File): Promise<string> => {
 };
 
 // Fonction pour envoyer une image et obtenir une réponse de l'IA
-export const fetchAIResponseWithImage = async (file: File): Promise<string> => {
+export const fetchAIResponseWithImage = async (file: File, conversationId: string, question?: string, messageHistory: { sender: string, text: string }[] = []): Promise<string> => {
   try {
-    console.log("🖼️ Envoi de l'image au backend :", { fileName: file.name, fileSize: file.size });
+    console.log("🖼️ Envoi de l'image au backend :", { fileName: file.name, fileSize: file.size, conversationId, question, historyLength: messageHistory.length });
     
     // Création d'un FormData pour envoyer le fichier
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('conversation_id', conversationId);
+    
+    // Ajouter la question si elle existe
+    if (question && question.trim() !== '') {
+      formData.append('question', question);
+    }
+    
+    // Ajouter l'historique des messages au format JSON
+    if (messageHistory.length > 0) {
+      const history = messageHistory.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      }));
+      formData.append('history', JSON.stringify(history));
+    }
     
     // Configuration explicite pour CORS avec FormData
     const response = await axios.post<ApiResponse>(IMAGE_CHAT_URL, formData, {

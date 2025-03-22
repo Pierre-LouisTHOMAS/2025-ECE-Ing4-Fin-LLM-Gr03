@@ -1,4 +1,5 @@
 import React from "react";
+import "../App.css";
 
 interface MessageProps {
   sender: "user" | "ai" | "bot";
@@ -6,7 +7,6 @@ interface MessageProps {
 }
 
 const Message: React.FC<MessageProps> = ({ sender, text }) => {
-  // Conversion de 'ai' en 'bot' pour la compatibilité avec les styles CSS
   const senderClass = sender === "ai" ? "bot" : sender;
   
   return (

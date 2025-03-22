@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import "../App.css";
 
 const PlusIcon = () => (
   <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">

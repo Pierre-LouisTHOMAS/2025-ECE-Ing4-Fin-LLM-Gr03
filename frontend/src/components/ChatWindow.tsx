@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { fetchAIResponse } from "../services/api";
 import InputBox from "./InputBox";
 import { motion, AnimatePresence } from "framer-motion";
+import "../App.css";
 
 const UserIcon = () => (
   <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -39,17 +40,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, messages, onSen
   const [error, setError] = useState<string | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTo({
-        top: messagesContainerRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  };
-
   useEffect(() => {
-    scrollToBottom();
+    messagesContainerRef.current?.scrollTo({
+      top: messagesContainerRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   }, [messages]);
 
   const handleSendMessage = async (text: string, file?: File | null) => {
@@ -63,7 +58,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, messages, onSen
       const aiMessage: MessageType = { id: Date.now() + 1, sender: "ai", text: response };
       onSendMessage(aiMessage);
     } catch (err) {
-      console.error("Erreur :", err);
       setError("Erreur serveur. Vérifiez le backend.");
     } finally {
       setIsTyping(false);
@@ -71,7 +65,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, messages, onSen
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="chat-container">
       <div className="chat-header">EXAONE Chat</div>
 
       <div ref={messagesContainerRef} className="messages-container">
@@ -101,37 +95,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, messages, onSen
             </motion.div>
           ))}
         </AnimatePresence>
-
-        {isTyping && (
-          <div className="message-row ai">
-            <div className="message-content">
-              <div className="avatar ai">
-                <AIIcon />
-              </div>
-              <div className="typing-indicator">
-                <div className="typing-dot"></div>
-                <div className="typing-dot"></div>
-                <div className="typing-dot"></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="message-row ai">
-            <div className="message-content">
-              <div className="avatar ai"><AIIcon /></div>
-              <div className="message-text error-text">
-                <p><strong>Erreur</strong></p><p>{error}</p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="chat-footer">
         <InputBox onSendMessage={handleSendMessage} />
-        <div style={{ textAlign: 'center', marginTop: '4px', fontSize: '10px', color: '#6b7280', opacity: 0.6 }}>
+        <div className="chat-credit">
           EXAONE peut produire des informations incorrectes. Vérifiez les informations importantes.
         </div>
       </div>

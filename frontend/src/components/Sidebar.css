@@ -1,0 +1,77 @@
+.sidebar {
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  background-color: #202123;
+  border-right: 1px solid #4d4d4f;
+  flex-shrink: 0;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.conversations-list {
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.sidebar-footer {
+  height: 40px;
+  border-top: 1px solid #4d4d4f;
+  text-align: center;
+  font-size: 12px;
+  color: #8e8ea0;
+  background-color: #202123;
+  line-height: 40px;
+  flex-shrink: 0;
+}
+
+.new-chat-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin: 8px 8px 0;
+  border: 1px solid #565869;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #ececf1;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.new-chat-button:hover {
+  background-color: #2b2c2f;
+}
+
+.conversation-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 14px;
+  color: #ececf1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-item:hover {
+  background-color: #2a2b32;
+}
+
+.conversation-item.active {
+  background-color: #343541;
+}
+
+.conversation-item svg {
+  width: 16px;
+  height: 16px;
+  margin-right: 12px;
+  color: #8e8ea0;
+}

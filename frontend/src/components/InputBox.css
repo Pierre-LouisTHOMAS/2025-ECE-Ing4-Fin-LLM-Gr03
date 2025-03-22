@@ -1,0 +1,70 @@
+.input-container {
+    max-width: 800px;
+    width: 100%;
+    position: relative;
+    border-radius: 16px;
+    border: 1px solid #565869;
+    background-color: #40414f;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+  }
+  
+  .input-textarea {
+    flex: 1;
+    resize: none;
+    border: none;
+    background-color: transparent;
+    color: #ececf1;
+    font-size: 16px;
+    line-height: 1.5;
+    padding: 14px 48px 14px 36px;
+    max-height: 200px;
+    outline: none;
+    border-radius: 16px;
+  }
+  
+  .send-button {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    background-color: #19c37d;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .send-button:hover {
+    background-color: #1a7f64;
+  }
+  
+  .send-button svg {
+    width: 16px;
+    height: 16px;
+    color: white;
+  }
+  
+  .clip-button {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .clip-button svg {
+    width: 20px;
+    height: 20px;
+    color: #8e8ea0;
+  }
+  
+  .clip-button:hover svg {
+    color: #ececf1;
+  }

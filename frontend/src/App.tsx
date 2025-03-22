@@ -38,7 +38,7 @@ const App: React.FC = () => {
 
   const handleNewConversation = () => {
     const newId = Date.now().toString();
-    setConversations(prev => [...prev, { id: newId, title: `Conversation ${prev.length + 1}` }]);
+    setConversations(prev => [{ id: newId, title: `Conversation ${prev.length + 1}` }, ...prev]);
     setMessagesMap(prev => ({
       ...prev,
       [newId]: [

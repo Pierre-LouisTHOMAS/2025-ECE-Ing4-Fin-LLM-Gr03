@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import "../App.css";
 
 interface InputBoxProps {
   onSendMessage: (message: string, file?: File | null) => void;

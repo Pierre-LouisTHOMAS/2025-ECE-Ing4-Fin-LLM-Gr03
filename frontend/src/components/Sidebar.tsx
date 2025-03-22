@@ -1,16 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 
-// Icônes pour la barre latérale
 const PlusIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 4V20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    <path d="M4 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+    <path d="M12 4V20" /><path d="M4 12H20" />
   </svg>
 );
 
 const ChatIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.6056 8.7 3.90003C9.87812 3.30496 11.1801 2.99659 12.5 3.00003H13C15.0843 3.11502 17.053 3.99479 18.5291 5.47089C20.0052 6.94699 20.885 8.91568 21 11V11.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24">
+    <path d="M21 11.5C21 13.9853 20.0536 16.3745 18.364 18.364L21 21L18.364 18.364C16.3745 20.0536 13.9853 21 11.5 21C9.01472 21 6.62552 20.0536 4.63604 18.364C2.94649 16.3745 2 13.9853 2 11.5C2 9.01472 2.94649 6.62552 4.63604 4.63604C6.62552 2.94649 9.01472 2 11.5 2C13.9853 2 16.3745 2.94649 18.364 4.63604C20.0536 6.62552 21 9.01472 21 11.5Z" />
   </svg>
 );
 
@@ -18,6 +16,8 @@ interface SidebarProps {
   conversations: { id: string; title: string }[];
   onSelectConversation: (id: string) => void;
   onNewConversation: () => void;
+  onRenameConversation: (id: string, newTitle: string) => void;
+  onDeleteConversation: (id: string) => void;
   currentConversationId: string | null;
 }
 
@@ -25,20 +25,32 @@ const Sidebar: React.FC<SidebarProps> = ({
   conversations, 
   onSelectConversation, 
   onNewConversation,
+  onRenameConversation,
+  onDeleteConversation,
   currentConversationId 
 }) => {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState<string>("");
+
+  const startRename = (id: string, currentTitle: string) => {
+    setEditingId(id);
+    setInputValue(currentTitle);
+  };
+
+  const handleRenameSubmit = () => {
+    if (editingId) {
+      onRenameConversation(editingId, inputValue.trim() || "Conversation");
+      setEditingId(null);
+    }
+  };
+
   return (
     <div className="sidebar">
       <div className="sidebar-content">
-        {/* Bouton Nouvelle Conversation */}
-        <button
-          onClick={onNewConversation}
-          className="new-chat-button"
-        >
+        <button onClick={onNewConversation} className="new-chat-button">
           <PlusIcon /> Nouvelle conversation
         </button>
 
-        {/* Liste des conversations */}
         <div className="conversations-list">
           {conversations.length === 0 ? (
             <p className="text-gray-400 text-sm p-3">Aucune conversation</p>
@@ -46,18 +58,39 @@ const Sidebar: React.FC<SidebarProps> = ({
             conversations.map((conv) => (
               <div
                 key={conv.id}
-                onClick={() => onSelectConversation(conv.id)}
                 className={`conversation-item ${currentConversationId === conv.id ? 'active' : ''}`}
+                onClick={() => onSelectConversation(conv.id)}
               >
                 <ChatIcon />
-                {conv.title}
+                {editingId === conv.id ? (
+                  <input
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onBlur={handleRenameSubmit}
+                    onKeyDown={(e) => e.key === "Enter" && handleRenameSubmit()}
+                    autoFocus
+                    style={{ background: "transparent", color: "#ececf1", border: "none", width: "100%" }}
+                  />
+                ) : (
+                  <span onDoubleClick={() => startRename(conv.id, conv.title)}>
+                    {conv.title}
+                  </span>
+                )}
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteConversation(conv.id);
+                  }} 
+                  style={{ marginLeft: "auto", background: "transparent", border: "none", color: "#8e8ea0", cursor: "pointer" }}
+                >
+                  🗑️
+                </button>
               </div>
             ))
           )}
         </div>
       </div>
-      
-      {/* Pied de page de la barre latérale */}
+
       <div className="sidebar-footer">
         <p>EXAONE Chat v1.0</p>
       </div>

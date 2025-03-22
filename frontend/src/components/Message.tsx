@@ -1,5 +1,4 @@
 import React from "react";
-import './Message.css';
 
 interface MessageProps {
   sender: "user" | "ai" | "bot";

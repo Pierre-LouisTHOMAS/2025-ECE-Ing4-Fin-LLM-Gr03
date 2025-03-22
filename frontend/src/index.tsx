@@ -4,7 +4,7 @@ import App from "./App";
 import "./styles.css";
 import "./App.css";
 
-// Utilisation de l'application réelle qui communique avec le modèle EXAONE
+// Utilisation de l'application réelle qui communique avec le modèle Qwen
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
   <React.StrictMode>
@@ -13,7 +13,7 @@ root.render(
 );
 
 // Note: La version statique ci-dessous a été désactivée car elle utilise des réponses prédéfinies
-// au lieu de communiquer avec le modèle EXAONE
+// au lieu de communiquer avec le modèle Qwen
 /*
 import React from 'react';
 import ReactDOM from 'react-dom/client';

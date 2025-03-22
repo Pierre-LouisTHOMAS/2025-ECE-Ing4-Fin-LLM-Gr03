@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ChatWindow from "./components/ChatWindow";
 import Sidebar from "./components/Sidebar";
+import { getConversations, createNewConversation, deleteConversation, renameConversation } from "./services/storage";
 import "./App.css";
 
 // Icône pour le bouton de menu (responsive)
@@ -17,6 +18,29 @@ const App: React.FC = () => {
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Charger les conversations depuis l'API/localStorage au démarrage
+  useEffect(() => {
+    const loadConversations = async () => {
+      setIsLoading(true);
+      try {
+        const loadedConversations = await getConversations();
+        setConversations(loadedConversations);
+        
+        // Sélectionner la conversation la plus récente s'il y en a
+        if (loadedConversations.length > 0) {
+          setCurrentConversationId(loadedConversations[loadedConversations.length - 1].id);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des conversations :", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadConversations();
+  }, []);
 
   // Vérifier si l'écran est en mode mobile
   useEffect(() => {
@@ -37,14 +61,22 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const handleNewConversation = () => {
-    const newId = Date.now().toString();
-    setConversations([...conversations, { id: newId, title: `Conversation ${conversations.length + 1}` }]);
-    setCurrentConversationId(newId);
-    
-    // Fermer la sidebar en mode mobile après avoir sélectionné une conversation
-    if (isMobile) {
-      setIsSidebarOpen(false);
+  const handleNewConversation = async () => {
+    try {
+      const newTitle = `Conversation ${conversations.length + 1}`;
+      const newConversation = await createNewConversation(newTitle);
+      
+      if (newConversation) {
+        setConversations(prev => [...prev, { id: newConversation.id, title: newConversation.title }]);
+        setCurrentConversationId(newConversation.id);
+        
+        // Fermer la sidebar en mode mobile après avoir sélectionné une conversation
+        if (isMobile) {
+          setIsSidebarOpen(false);
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors de la création d'une nouvelle conversation :", error);
     }
   };
 
@@ -54,6 +86,46 @@ const App: React.FC = () => {
     // Fermer la sidebar en mode mobile après avoir sélectionné une conversation
     if (isMobile) {
       setIsSidebarOpen(false);
+    }
+  };
+  
+  const handleDeleteConversation = async (id: string) => {
+    try {
+      await deleteConversation(id);
+      setConversations(prev => prev.filter(conv => conv.id !== id));
+      
+      // Si la conversation supprimée était la conversation actuelle
+      if (currentConversationId === id) {
+        // Sélectionner une autre conversation s'il en reste
+        if (conversations.length > 1) {
+          const remainingConversations = conversations.filter(conv => conv.id !== id);
+          setCurrentConversationId(remainingConversations[0].id);
+        } else {
+          setCurrentConversationId(null);
+        }
+      }
+    } catch (error) {
+      console.error(`Erreur lors de la suppression de la conversation ${id} :`, error);
+    }
+  };
+  
+  const handleRenameConversation = async (id: string, newTitle: string) => {
+    try {
+      const updatedConversation = await renameConversation(id, newTitle);
+      
+      if (updatedConversation) {
+        // Mettre à jour la liste des conversations avec le nouveau titre
+        setConversations(prev => prev.map(conv => {
+          if (conv.id === id) {
+            return { ...conv, title: newTitle };
+          }
+          return conv;
+        }));
+        
+        console.log(`Conversation ${id} renommée en "${newTitle}"`);
+      }
+    } catch (error) {
+      console.error(`Erreur lors du renommage de la conversation ${id} :`, error);
     }
   };
 
@@ -69,7 +141,10 @@ const App: React.FC = () => {
           conversations={conversations}
           onSelectConversation={handleSelectConversation}
           onNewConversation={handleNewConversation}
+          onDeleteConversation={handleDeleteConversation}
+          onRenameConversation={handleRenameConversation}
           currentConversationId={currentConversationId}
+          isLoading={isLoading}
         />
       </div>
 
@@ -86,7 +161,13 @@ const App: React.FC = () => {
         )}
         
         {/* Fenêtre de chat */}
-        <ChatWindow conversationId={currentConversationId} />
+        <ChatWindow 
+          conversationId={currentConversationId} 
+          onConversationUpdated={() => {
+            // Rafraîchir la liste des conversations après une mise à jour
+            getConversations().then(setConversations);
+          }}
+        />
       </div>
     </div>
   );

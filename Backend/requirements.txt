@@ -1,1 +1,7 @@
-pip install fastapi uvicorn transformers torch
+fastapi
+uvicorn
+transformers
+torch
+sqlalchemy
+pydantic
+python-dotenv

@@ -1,0 +1,29 @@
+/* Styles spécifiques pour la barre latérale */
+
+/* Force l'affichage des boutons d'action */
+.conversation-item .conversation-actions {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  min-width: 60px !important;
+  justify-content: flex-end !important;
+}
+
+/* Force l'affichage des boutons individuels */
+.conversation-item .conversation-actions button {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Assure que le conteneur de conversation a le bon layout */
+.conversation-item {
+  display: flex !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+}
+
+/* Limite la largeur du titre pour éviter qu'il ne chevauche les boutons */
+.conversation-title-container {
+  max-width: 70% !important;
+  overflow: hidden !important;
+}

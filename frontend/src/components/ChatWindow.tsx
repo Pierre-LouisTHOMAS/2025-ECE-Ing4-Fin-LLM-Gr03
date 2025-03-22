@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { fetchAIResponse, fetchAIResponseWithPDF } from "../services/api";
+import { fetchAIResponse, fetchAIResponseWithPDF, fetchAIResponseWithImage } from "../services/api";
 import { saveConversation, getConversationMessages } from "../services/storage";
 import './ChatWindow.css';
 
@@ -17,6 +17,14 @@ const PDFIcon = () => (
     <path d="M14 2V8H20" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M9 15H15" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M9 18H12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const ImageIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="8.5" cy="8.5" r="1.5" fill="white" />
+    <path d="M21 15L16 10L5 21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -57,6 +65,7 @@ interface MessageType {
   sender: "user" | "ai";
   text: string;
   pdfUrl?: string; // URL optionnelle pour les fichiers PDF
+  imageUrl?: string; // URL optionnelle pour les images
 }
 
 interface ChatWindowProps {
@@ -76,9 +85,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileType, setFileType] = useState<'pdf' | 'image' | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Ajuster automatiquement la hauteur du textarea
   useEffect(() => {
@@ -129,20 +140,32 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      if (file.type === 'application/pdf') {
+      if (file.type === 'application/pdf' && fileType === 'pdf') {
         setSelectedFile(file);
         // Afficher le nom du fichier dans le champ de texte
-        setInputText(`Fichier sélectionné: ${file.name}`);
+        setInputText(`Fichier PDF sélectionné: ${file.name}`);
+      } else if (['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type) && fileType === 'image') {
+        setSelectedFile(file);
+        // Afficher le nom du fichier dans le champ de texte
+        setInputText(`Image sélectionnée: ${file.name}`);
       } else {
-        setError("Veuillez sélectionner un fichier PDF valide.");
+        setError("Veuillez sélectionner un fichier valide.");
         setSelectedFile(null);
       }
     }
   };
 
   const handlePDFUpload = () => {
+    setFileType('pdf');
     if (fileInputRef.current) {
       fileInputRef.current.click();
+    }
+  };
+  
+  const handleImageUpload = () => {
+    setFileType('image');
+    if (imageInputRef.current) {
+      imageInputRef.current.click();
     }
   };
 
@@ -155,23 +178,45 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
     
     try {
       if (selectedFile) {
-        // Si un fichier PDF est sélectionné
-        const fileText = `J'ai envoyé un fichier PDF: ${selectedFile.name}`;
-        userMessage = { id: userMessageId, sender: "user", text: fileText };
+        // Si un fichier est sélectionné (PDF ou image)
+        let fileText = "";
+        let response = "";
         
-        // Affichage du message utilisateur et indicateur de chargement
-        setMessages(prev => [...prev, userMessage]);
-        setIsTyping(true);
+        if (fileType === 'pdf') {
+          // Cas d'un fichier PDF
+          fileText = `J'ai envoyé un fichier PDF: ${selectedFile.name}`;
+          userMessage = { id: userMessageId, sender: "user", text: fileText };
+          
+          // Affichage du message utilisateur et indicateur de chargement
+          setMessages(prev => [...prev, userMessage]);
+          setIsTyping(true);
+          
+          // Réinitialisation du champ de saisie
+          setInputText("");
+          
+          // Envoi du fichier PDF au backend
+          console.log("📄 Envoi du PDF au modèle :", selectedFile.name);
+          response = await fetchAIResponseWithPDF(selectedFile);
+        } else if (fileType === 'image') {
+          // Cas d'une image
+          fileText = `J'ai envoyé une image: ${selectedFile.name}`;
+          userMessage = { id: userMessageId, sender: "user", text: fileText };
+          
+          // Affichage du message utilisateur et indicateur de chargement
+          setMessages(prev => [...prev, userMessage]);
+          setIsTyping(true);
+          
+          // Réinitialisation du champ de saisie
+          setInputText("");
+          
+          // Envoi de l'image au backend
+          console.log("🖼️ Envoi de l'image au modèle :", selectedFile.name);
+          response = await fetchAIResponseWithImage(selectedFile);
+        }
         
-        // Réinitialisation du champ de saisie
-        setInputText("");
-        
-        // Envoi du fichier PDF au backend
-        console.log("📄 Envoi du PDF au modèle :", selectedFile.name);
-        const response = await fetchAIResponseWithPDF(selectedFile);
-        
-        // Réinitialiser le fichier sélectionné
+        // Réinitialiser le fichier sélectionné et le type
         setSelectedFile(null);
+        setFileType(null);
         
         // Création du message de réponse de l'IA avec un ID unique
         const aiMessageId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}-ai`;

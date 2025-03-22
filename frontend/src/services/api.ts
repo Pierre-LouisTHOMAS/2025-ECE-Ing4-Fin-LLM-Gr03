@@ -1,9 +1,10 @@
 import axios from "axios";
 
 // Configuration de base de l'API
-const BASE_URL = "http://localhost:8000"; // Utilisation de localhost pour une meilleure compatibilité avec le navigateur
+const BASE_URL = "http://localhost:8003"; // Utilisation de localhost pour une meilleure compatibilité avec le navigateur
 const CHAT_URL = `${BASE_URL}/chat`;
 const PDF_CHAT_URL = `${BASE_URL}/chat-pdf`;
+const IMAGE_CHAT_URL = `${BASE_URL}/chat-image`;
 const CONVERSATIONS_URL = `${BASE_URL}/conversations`;
 
 // Types pour l'API
@@ -164,6 +165,48 @@ export const fetchAIResponseWithPDF = async (file: File): Promise<string> => {
   } catch (error: any) {
     // Affichage détaillé de l'erreur pour faciliter le débogage
     console.error("❌ Erreur lors de l'envoi du PDF :", error);
+    
+    if (error.response) {
+      // La requête a été faite et le serveur a répondu avec un code d'état
+      console.error("Détails de l'erreur :", {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+    } else if (error.request) {
+      // La requête a été faite mais aucune réponse n'a été reçue
+      console.error("Aucune réponse reçue :", error.request);
+    } else {
+      // Une erreur s'est produite lors de la configuration de la requête
+      console.error("Erreur de configuration :", error.message);
+    }
+    
+    throw new Error("Impossible de communiquer avec le serveur. Vérifiez que le backend est bien lancé.");
+  }
+};
+
+// Fonction pour envoyer une image et obtenir une réponse de l'IA
+export const fetchAIResponseWithImage = async (file: File): Promise<string> => {
+  try {
+    console.log("🖼️ Envoi de l'image au backend :", { fileName: file.name, fileSize: file.size });
+    
+    // Création d'un FormData pour envoyer le fichier
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Configuration explicite pour CORS avec FormData
+    const response = await axios.post<ApiResponse>(IMAGE_CHAT_URL, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Accept': 'application/json'
+      }
+    });
+    
+    console.log("💬 Réponse reçue du backend pour l'image :", response.data);
+    return response.data.response;
+  } catch (error: any) {
+    // Affichage détaillé de l'erreur pour faciliter le débogage
+    console.error("❌ Erreur lors de l'envoi de l'image :", error);
     
     if (error.response) {
       // La requête a été faite et le serveur a répondu avec un code d'état

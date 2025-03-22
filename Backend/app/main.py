@@ -1,12 +1,18 @@
 from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from transformers import AutoTokenizer, AutoModelForVision2Seq
-import torch
 import os
 import io
+import gc
+import threading
+import queue
+import uuid
 from datetime import datetime
+from PIL import Image
 from PyPDF2 import PdfReader
+
+# Import du module MLX-VLM personnalisé pour le modèle multimodal
+from .mlx_vlm_model import get_model
 
 # Import des modules locaux
 from . import crud, database, schema
@@ -25,10 +31,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Chargement du modèle Qwen
-MODEL_NAME = "Qwen/Qwen2.5-VL-3B-Instruct"
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForVision2Seq.from_pretrained(MODEL_NAME, trust_remote_code=True)
+# Chargement du modèle Qwen2.5-VL-3B-Instruct-8bit optimisé pour Apple Silicon
+print("Chargement du modèle Qwen2.5-VL-3B-Instruct-8bit optimisé pour Apple Silicon...")
+
+# Obtention de l'instance singleton du modèle MLX
+mlx_model = get_model()
+
+# File d'attente pour les requêtes au modèle (évite les problèmes de concurrence)
+model_queue = queue.Queue()
+
+# Fonction pour préchauffer le modèle
+def warm_up_model():
+    mlx_model.warmup()
+    print("Modèle MLX préchauffé et prêt à l'emploi")
+
+# Exécution du warm-up en arrière-plan
+threading.Thread(target=warm_up_model).start()
 
 # Dépendance pour obtenir la session de base de données
 def get_db():
@@ -39,30 +57,43 @@ def get_db():
         db.close()
 
 # Fonction commune pour générer une réponse du modèle
-def generate_model_response(input_text):
+def generate_model_response(input_text, image_path=None):
     try:
-        input_ids = tokenizer.encode(input_text, return_tensors="pt")
-
-        # Génération de la réponse avec des paramètres améliorés
-        with torch.no_grad():
-            output = model.generate(
-                input_ids,
-                max_new_tokens=250,  # Augmentation pour des réponses plus complètes
-                pad_token_id=tokenizer.eos_token_id,
-                do_sample=True,     # Permet une génération plus naturelle
-                temperature=0.7,     # Contrôle la créativité (plus bas = plus déterministe)
-                top_p=0.9            # Filtre les tokens les moins probables
+        # Génération de la réponse avec MLX (optimisé pour Apple Silicon)
+        if image_path:
+            response = mlx_model.generate(
+                prompt=input_text,
+                image_path=image_path,
+                max_tokens=250,           # Nombre maximum de tokens à générer
+                temperature=0.7,          # Contrôle de la créativité
+                top_p=0.9                 # Filtrage des tokens les moins probables
             )
-
-        response_text = tokenizer.decode(output[0], skip_special_tokens=True)
+        else:
+            response = mlx_model.generate(
+                prompt=input_text,
+                max_tokens=250,           # Nombre maximum de tokens à générer
+                temperature=0.7,          # Contrôle de la créativité
+                top_p=0.9                 # Filtrage des tokens les moins probables
+            )
+        
+        # Extraction du texte généré
+        response_text = response['generated_text']
 
         # Nettoyage de la réponse : extraction de la partie après "Assistant:"
         try:
             # Essayer d'extraire uniquement la réponse de l'assistant
-            response_text = response_text.split("Assistant:")[-1].strip()
-        except:
-            # En cas d'échec, utiliser l'ancienne méthode de nettoyage
-            response_text = response_text.replace(input_text, "").strip()
+            if "Assistant:" in response_text:
+                response_text = response_text.split("Assistant:")[-1].strip()
+            # Si la sortie brute de mlx_vlm contient des balises de formatage
+            elif "<answer>" in response_text and "</answer>" in response_text:
+                response_text = response_text.split("<answer>")[-1].split("</answer>")[0].strip()
+            else:
+                # En cas d'échec, utiliser l'ancienne méthode de nettoyage
+                response_text = response_text.replace(input_text, "").strip()
+        except Exception as e:
+            print(f"Erreur lors du nettoyage de la réponse: {e}")
+            # Utiliser la réponse brute en dernier recours
+            pass
 
         return response_text
     except Exception as e:
@@ -82,6 +113,54 @@ def chat(request: schema.ChatRequest, db: Session = Depends(get_db)):
 
     except Exception as e:
         return {"response": f"Erreur interne du serveur: {str(e)}"}
+
+# Endpoint pour le chat avec l'IA (image)
+@app.post("/chat-image", response_model=schema.ChatResponse)
+async def chat_image(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    try:
+        # Vérification du type de fichier
+        if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+            return {"response": "Erreur: Veuillez télécharger une image valide (PNG, JPG, JPEG ou WEBP)."}
+        
+        # Création du dossier temporaire s'il n'existe pas
+        temp_dir = "temp_images"
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # Génération d'un nom de fichier unique
+        file_extension = os.path.splitext(file.filename)[1]
+        temp_image_path = os.path.join(temp_dir, f"{uuid.uuid4()}{file_extension}")
+        
+        # Lecture et sauvegarde de l'image
+        image_content = await file.read()
+        with open(temp_image_path, "wb") as f:
+            f.write(image_content)
+        
+        # Vérification que l'image est valide
+        try:
+            img = Image.open(temp_image_path)
+            img.verify()  # Vérifie que l'image est valide
+        except Exception as e:
+            os.remove(temp_image_path)  # Suppression du fichier temporaire
+            return {"response": f"Erreur: L'image n'est pas valide. Détails: {str(e)}"}
+        
+        # Prompt d'entrée pour l'analyse d'image
+        system_prompt = "Tu es un assistant IA français serviable, clair et concis basé sur le modèle Qwen. Tu vas analyser cette image et décrire ce que tu vois. Réponds en français de manière naturelle et directe."
+        
+        input_text = f"{system_prompt}\n\nUtilisateur: Pourrais-tu décrire cette image et me dire ce que tu y vois?\nAssistant:"
+        
+        # Génération de la réponse avec l'image
+        response_text = generate_model_response(input_text, temp_image_path)
+        
+        # Suppression du fichier temporaire après utilisation
+        try:
+            os.remove(temp_image_path)
+        except Exception as e:
+            print(f"Erreur lors de la suppression du fichier temporaire: {e}")
+        
+        return {"response": response_text}
+    
+    except Exception as e:
+        return {"response": f"Erreur lors du traitement de l'image: {str(e)}"}
 
 # Endpoint pour le chat avec l'IA (PDF)
 @app.post("/chat-pdf", response_model=schema.ChatResponse)
@@ -105,7 +184,8 @@ async def chat_pdf(file: UploadFile = File(...), db: Session = Depends(get_db)):
             pdf_text += page.extract_text() + "\n"
         
         # Limiter la taille du texte pour éviter de dépasser les limites du modèle
-        max_chars = 4000
+        # Augmenté pour profiter des 48 Go de RAM disponibles
+        max_chars = 6000
         if len(pdf_text) > max_chars:
             pdf_text = pdf_text[:max_chars] + "...\n(Le document a été tronqué car il était trop long)"
         

@@ -5,3 +5,8 @@ torch
 sqlalchemy
 pydantic
 python-dotenv
+mlx
+mlx-lm
+huggingface_hub
+PyPDF2
+python-multipart

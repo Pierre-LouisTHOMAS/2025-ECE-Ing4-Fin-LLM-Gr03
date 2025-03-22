@@ -8,7 +8,7 @@ class ChatRequest(BaseModel):
 
 # Schéma pour les messages
 class MessageBase(BaseModel):
-    message_id: str  # Modifié de int à str pour accepter les IDs au format chaîne
+    message_id: str | int  # Accepte à la fois les chaînes et les nombres
     sender: str
     text: str
 

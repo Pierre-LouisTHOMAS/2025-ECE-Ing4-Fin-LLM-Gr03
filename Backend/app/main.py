@@ -29,22 +29,32 @@ class ChatRequest(BaseModel):
 @app.post("/chat")
 def chat(request: ChatRequest):
     try:
-        # Prompt d’entrée amélioré
-        input_text = f"Utilisateur: {request.message}\nIA:"
+        # Prompt d'entrée amélioré avec des instructions claires pour le modèle
+        system_prompt = "Tu es un assistant IA français serviable, clair et concis. Réponds en français de manière naturelle et directe, sans instructions ni méta-commentaires. Fournis des réponses utiles et pertinentes."
+        
+        input_text = f"{system_prompt}\n\nUtilisateur: {request.message}\nAssistant:"
         input_ids = tokenizer.encode(input_text, return_tensors="pt")
 
-        # Génération de la réponse
+        # Génération de la réponse avec des paramètres améliorés
         with torch.no_grad():
             output = model.generate(
                 input_ids,
-                max_new_tokens=100,
-                pad_token_id=tokenizer.eos_token_id
+                max_new_tokens=150,  # Augmentation pour des réponses plus complètes
+                pad_token_id=tokenizer.eos_token_id,
+                do_sample=True,     # Permet une génération plus naturelle
+                temperature=0.7,     # Contrôle la créativité (plus bas = plus déterministe)
+                top_p=0.9            # Filtre les tokens les moins probables
             )
 
         response_text = tokenizer.decode(output[0], skip_special_tokens=True)
 
-        # Nettoyage de la réponse : suppression de la partie "Utilisateur: ..."
-        response_text = response_text.replace(input_text, "").strip()
+        # Nettoyage de la réponse : extraction de la partie après "Assistant:"
+        try:
+            # Essayer d'extraire uniquement la réponse de l'assistant
+            response_text = response_text.split("Assistant:")[-1].strip()
+        except:
+            # En cas d'échec, utiliser l'ancienne méthode de nettoyage
+            response_text = response_text.replace(input_text, "").strip()
 
         return {"response": response_text}
 

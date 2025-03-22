@@ -1,18 +1,19 @@
-/*import React from "react";
+import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { ChatProvider } from "./context/ChatContext";
 import "./styles.css";
 
+// Utilisation de l'application réelle qui communique avec le modèle EXAONE
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
   <React.StrictMode>
-    <ChatProvider>
-      <App />
-    </ChatProvider>
+    <App />
   </React.StrictMode>
-);*/
+);
 
+// Note: La version statique ci-dessous a été désactivée car elle utilise des réponses prédéfinies
+// au lieu de communiquer avec le modèle EXAONE
+/*
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
@@ -24,5 +25,6 @@ root.render(
     <AppStatique />
   </React.StrictMode>
 );
+*/
 
 export {};

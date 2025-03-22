@@ -1,22 +1,18 @@
 import React from "react";
+import './Message.css';
 
 interface MessageProps {
-  sender: "user" | "ai";
+  sender: "user" | "ai" | "bot";
   text: string;
 }
 
 const Message: React.FC<MessageProps> = ({ sender, text }) => {
+  // Conversion de 'ai' en 'bot' pour la compatibilité avec les styles CSS
+  const senderClass = sender === "ai" ? "bot" : sender;
+  
   return (
-    <div className={`flex ${sender === "user" ? "justify-end" : "justify-start"} my-2`}>
-      <div
-        className={`max-w-2xl px-4 py-2 rounded-lg shadow-md ${
-          sender === "user"
-            ? "bg-blue-500 text-white self-end"
-            : "bg-gray-700 text-white self-start"
-        }`}
-      >
-        {text}
-      </div>
+    <div className={`message ${senderClass}`}>
+      <p>{text}</p>
     </div>
   );
 };

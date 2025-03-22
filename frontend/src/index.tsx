@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
+import "./App.css";
 
 // Utilisation de l'application réelle qui communique avec le modèle EXAONE
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);

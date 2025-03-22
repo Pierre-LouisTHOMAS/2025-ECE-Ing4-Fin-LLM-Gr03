@@ -22,8 +22,8 @@ Assurez-vous d'avoir installé les éléments suivants sur votre machine :
 ### 1. Cloner le dépôt
 
 ```bash
-git clone [URL_DU_DÉPÔT]
-cd [NOM_DU_DOSSIER_CLONÉ]
+git clone https://github.com/Pierre-LouisTHOMAS/2025-ECE-Ing4-Fin-LLM-Gr03.git
+cd 2025-ECE-Ing4-Fin-LLM-Gr03
 ```
 
 ### 2. Configuration du backend

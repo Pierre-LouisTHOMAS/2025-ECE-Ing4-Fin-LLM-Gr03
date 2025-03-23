@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, status, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, status, File, UploadFile, Form, Request
 from typing import List, Optional, Dict, Any
 import os
 import io
@@ -14,6 +14,9 @@ from PyPDF2 import PdfReader
 # Import du module MLX-VLM personnalisé pour le modèle multimodal
 from .mlx_vlm_model import get_model
 
+# Import du service de mémoire à long terme
+from .memory_service import MemoryService
+
 # Initialisation de FastAPI
 app = FastAPI(title="Qwen Chat API")
 
@@ -22,7 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:59141", "*"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:59141", "http://127.0.0.1:60180", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,17 +51,27 @@ def warm_up_model():
 # Exécution du warm-up en arrière-plan
 threading.Thread(target=warm_up_model).start()
 
+# Initialisation du service de mémoire
+memory_service = MemoryService()
+
 # Fonction pour s'assurer que le répertoire de mémoire existe
 def ensure_memory_dir():
     os.makedirs(memory_service.MEMORY_DIR, exist_ok=True)
 
 # Fonction commune pour générer une réponse du modèle
-def generate_model_response(input_text, image_path=None):
+def generate_model_response(input_text, image_path=None, memory_context=None):
     try:
+        # Préparation du prompt avec le contexte de mémoire si disponible
+        if memory_context:
+            # Ajout du contexte de mémoire au prompt
+            enhanced_prompt = f"{memory_context}\n\n{input_text}"
+        else:
+            enhanced_prompt = input_text
+            
         # Génération de la réponse avec MLX (optimisé pour Apple Silicon)
         if image_path:
             response = mlx_model.generate(
-                prompt=input_text,
+                prompt=enhanced_prompt,
                 image_path=image_path,
                 max_tokens=250,           # Nombre maximum de tokens à générer
                 temperature=0.7,          # Contrôle de la créativité
@@ -66,7 +79,7 @@ def generate_model_response(input_text, image_path=None):
             )
         else:
             response = mlx_model.generate(
-                prompt=input_text,
+                prompt=enhanced_prompt,
                 max_tokens=250,           # Nombre maximum de tokens à générer
                 temperature=0.7,          # Contrôle de la créativité
                 top_p=0.9                 # Filtrage des tokens les moins probables
@@ -100,8 +113,11 @@ def generate_model_response(input_text, image_path=None):
 def chat(request: Dict[str, Any]):
     """Endpoint pour le chat avec l'IA (texte uniquement)"""
     try:
-        # Récupérer le message de l'utilisateur
+        # Récupérer le message de l'utilisateur et les paramètres
         message = request.get("message", "")
+        conversation_id = request.get("conversation_id", "default_conversation")
+        use_memory = request.get("use_memory", True)  # Par défaut, utiliser la mémoire
+        
         if not message:
             return {"response": "Veuillez fournir un message."}
         
@@ -115,10 +131,18 @@ Règles importantes:
 4. Évite les instructions ou méta-commentaires dans tes réponses
 5. Fournis des réponses utiles et pertinentes
 6. Sois concis et précis dans tes réponses
+7. Si tu connais le nom de l'utilisateur, utilise-le naturellement dans tes réponses
 """
         
         # Construction du prompt simple
         prompt = f"{system_prompt}\n\n"
+        
+        # Récupération du contexte de mémoire si demandé
+        memory_context = None
+        if use_memory:
+            memory_context = memory_service.get_memory_context()
+            # Log pour le débogage
+            print(f"Contexte de mémoire utilisé:\n{memory_context}")
         
         # Ajout du message actuel
         prompt += f"Utilisateur: {message}\nAssistant:"
@@ -127,9 +151,18 @@ Règles importantes:
         print(f"Prompt final envoyé au modèle:\n{prompt}")
         
         # Génération de la réponse
-        response_text = generate_model_response(prompt)
+        response_text = generate_model_response(prompt, memory_context=memory_context)
         
-        return {"response": response_text}
+        # Extraction des mémoires de la conversation si demandé
+        if use_memory:
+            # Créer une liste de messages pour l'extraction de mémoire
+            messages = [
+                {"role": "user", "content": message},
+                {"role": "assistant", "content": response_text}
+            ]
+            memory_service.extract_memories_from_conversation(conversation_id, messages)
+        
+        return {"response": response_text, "conversation_id": conversation_id}
 
     except Exception as e:
         return {"response": f"Erreur interne du serveur: {str(e)}"}
@@ -274,15 +307,49 @@ Règles importantes:
 # Endpoint simple pour tester que l'API fonctionne
 @app.get("/conversations", response_model=List[Dict[str, Any]])
 def get_conversations():
-    """Renvoie une liste de conversations factices pour compatibilité avec le frontend"""
-    return [
-        {
-            "id": "default_conversation",
-            "title": "Nouvelle conversation",
-            "created_at": datetime.now().isoformat(),
-            "updated_at": datetime.now().isoformat()
-        }
-    ]
+    """Renvoie la liste des conversations enregistrées"""
+    try:
+        # Récupérer la liste des conversations depuis le service de mémoire
+        conversations_list = memory_service.get_all_conversations()
+        
+        # Si aucune conversation n'est trouvée, renvoyer une conversation par défaut
+        if not conversations_list:
+            return [
+                {
+                    "id": "default_conversation",
+                    "title": "Nouvelle conversation",
+                    "created_at": datetime.now().isoformat(),
+                    "updated_at": datetime.now().isoformat(),
+                    "messages": []
+                }
+            ]
+        
+        # Formater les données pour le frontend
+        formatted_conversations = []
+        for conv_id, conv_data in conversations_list.items():
+            # Vérifier que les données sont valides
+            if isinstance(conv_data, dict):
+                formatted_conversations.append({
+                    "id": conv_id,
+                    "title": conv_data.get("title", f"Conversation {conv_id}"),
+                    "created_at": conv_data.get("created_at", datetime.now().isoformat()),
+                    "updated_at": conv_data.get("updated_at", datetime.now().isoformat()),
+                    "messages": conv_data.get("messages", [])
+                })
+        
+        return formatted_conversations
+    except Exception as e:
+        print(f"Erreur lors de la récupération des conversations: {str(e)}")
+        # En cas d'erreur, retourner une conversation par défaut
+        return [
+            {
+                "id": "default_conversation",
+                "title": "Nouvelle conversation",
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+                "messages": []
+            }
+        ]
 
 @app.post("/conversations", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 def create_conversation(conversation: Dict[str, Any]):
@@ -379,46 +446,104 @@ def delete_memory(conversation_id: str, key: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression du souvenir: {str(e)}")
 
-@app.post("/conversations/{conversation_id}/save", response_model=Dict[str, Any])
-def update_conversation_title(conversation_id: str, title: str):
-    """Met à jour le titre d'une conversation"""
+# Endpoint pour sauvegarder une conversation et son contenu
+@app.post("/conversations/{conversation_id}/save")
+async def save_conversation(conversation_id: str, conversation_data: Request):
     try:
-        # Charger la mémoire de la conversation
-        memory = memory_service.load_memory(conversation_id)
+        # Récupérer les données JSON de la requête
+        data = await conversation_data.json()
         
-        # Mettre à jour le titre
+        # Extraire le titre et les messages
+        title = data.get("title", f"Conversation {conversation_id}")
+        messages = data.get("messages", [])
+        created_at = data.get("created_at", datetime.now().isoformat())
+        
+        # Charger la mémoire existante ou créer une nouvelle
+        try:
+            memory = memory_service.load_memory(conversation_id)
+        except:
+            memory = {}
+        
+        # Mettre à jour les données
         memory["title"] = title
+        memory["created_at"] = created_at
+        memory["updated_at"] = datetime.now().isoformat()
+        memory["messages"] = messages
         
         # Sauvegarder la mémoire
         if memory_service.save_memory(conversation_id, memory):
+            # Extraire les souvenirs des messages si possible
+            try:
+                memory_service.extract_memories_from_conversation(conversation_id)
+            except Exception as extract_error:
+                print(f"Erreur lors de l'extraction des souvenirs: {str(extract_error)}")
+            
             return {
                 "id": conversation_id,
                 "title": title,
-                "created_at": memory.get("created_at"),
-                "updated_at": memory.get("updated_at")
+                "created_at": created_at,
+                "updated_at": memory.get("updated_at"),
+                "messages": messages
             }
         else:
-            raise HTTPException(status_code=500, detail="Erreur lors de la sauvegarde du titre de la conversation")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la mise à jour du titre de la conversation: {str(e)}")
-
-# Endpoint pour sauvegarder une conversation
-@app.post("/conversations/{conversation_id}/save")
-def save_conversation(conversation_id: str, conversation_data: Dict[str, Any]):
-    try:
-        # Ici nous acceptons simplement la requête et retournons un succès
-        # Nous ne stockons pas réellement les données puisque nous avons supprimé le service de mémoire
-        return {
-            "id": conversation_id,
-            "title": conversation_data.get("title", f"Conversation {conversation_id}"),
-            "created_at": conversation_data.get("created_at", datetime.now().isoformat()),
-            "messages": conversation_data.get("messages", [])
-        }
+            raise HTTPException(status_code=500, detail="Erreur lors de la sauvegarde de la conversation")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur lors de la sauvegarde de la conversation: {str(e)}"
         )
+
+# Endpoints pour la mémoire à long terme
+@app.get("/memories/user")
+def get_user_memories():
+    """Récupère toutes les mémoires de l'utilisateur"""
+    return memory_service.get_user_memory()
+
+@app.post("/memories/user")
+def save_user_memory(memory_data: Dict[str, Any]):
+    """Sauvegarde une information dans la mémoire utilisateur"""
+    if "key" not in memory_data or "value" not in memory_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Les champs 'key' et 'value' sont requis"
+        )
+    
+    success = memory_service.save_user_memory(memory_data["key"], memory_data["value"])
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de la sauvegarde de la mémoire"
+        )
+    
+    return {"success": True}
+
+@app.post("/memories/extract")
+def extract_memories(data: Dict[str, Any]):
+    """Extrait des informations importantes d'une conversation"""
+    if "conversation_id" not in data or "messages" not in data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Les champs 'conversation_id' et 'messages' sont requis"
+        )
+    
+    success = memory_service.extract_memories_from_conversation(
+        data["conversation_id"],
+        data["messages"]
+    )
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de l'extraction des mémoires"
+        )
+    
+    return {"success": True}
+
+@app.get("/memories/context")
+def get_memory_context():
+    """Génère un contexte formaté pour le modèle basé sur les mémoires"""
+    context = memory_service.get_memory_context()
+    return {"context": context}
 
 # Route de test
 @app.get("/")

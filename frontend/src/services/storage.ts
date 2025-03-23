@@ -112,19 +112,32 @@ export const getConversationMessages = async (conversationId: string): Promise<M
  * @param messages - Liste des messages.
  */
 export const saveConversation = async (conversationId: string, title: string, messages: MessageType[]) => {
+  // Vérifier que l'ID est valide
+  if (!conversationId) {
+    console.error("ID de conversation invalide, utilisation d'un ID par défaut");
+    conversationId = Date.now().toString();
+  }
+  
   // Sauvegarder dans le cache local d'abord (pour une réponse rapide)
   saveToLocalStorage(conversationId, title, messages);
   
   try {
     // Convertir les messages au format de l'API
     const apiMessages = messages.map(msg => ({
-      message_id: msg.id,
+      message_id: msg.id || `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       sender: msg.sender,
       text: msg.text
     }));
     
-    // Sauvegarder dans l'API
-    await saveConversationToAPI(conversationId, title, apiMessages);
+    // Sauvegarder dans l'API avec un timeout plus court pour éviter les attentes
+    const savePromise = saveConversationToAPI(conversationId, title, apiMessages);
+    
+    // Utiliser un timeout pour éviter de bloquer trop longtemps
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Timeout lors de la sauvegarde")), 5000);
+    });
+    
+    await Promise.race([savePromise, timeoutPromise]);
     console.log("✅ Conversation sauvegardée avec succès dans l'API");
   } catch (error) {
     console.error("❌ Erreur lors de la sauvegarde de la conversation dans l'API :", error);

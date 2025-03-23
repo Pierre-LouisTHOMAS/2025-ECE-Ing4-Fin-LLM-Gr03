@@ -1,0 +1,210 @@
+/* Thèmes pour l'application Qwen Chat */
+
+/* Variables globales pour les transitions */
+:root {
+  --transition-speed: 0.3s;
+  --transition-timing: ease;
+}
+
+/* Appliquer la transition à tous les éléments */
+* {
+  transition: background-color var(--transition-speed) var(--transition-timing),
+              color var(--transition-speed) var(--transition-timing),
+              border-color var(--transition-speed) var(--transition-timing),
+              box-shadow var(--transition-speed) var(--transition-timing);
+}
+
+/* Thème sombre (par défaut) */
+.dark {
+  /* Couleurs de base */
+  --bg-primary: #343541;
+  --bg-secondary: #202123;
+  --text-primary: #ececf1;
+  --text-secondary: #c5c5d2;
+  --border-color: #4d4d4f;
+  
+  /* Éléments spécifiques */
+  --sidebar-bg: #202123;
+  --chat-bg: #343541;
+  --user-message-bg: #444654;
+  --ai-message-bg: #343541;
+  --input-bg: #40414f;
+  
+  /* Boutons et interactions */
+  --button-bg: #19c37d;
+  --button-hover: #1a7f54;
+  --button-text: white;
+  --hover-bg: #2b2c2f;
+  --active-bg: #343541;
+  
+  /* Éléments UI */
+  --scrollbar-thumb: #565869;
+  --scrollbar-track: #40414f;
+  --error-color: #ef4444;
+  --header-bg: #202123;
+  --header-text: #ececf1;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  
+  /* Nouvelles variables pour améliorer l'expérience */
+  --card-bg: #40414f;
+  --tooltip-bg: #565869;
+  --success-color: #19c37d;
+  --warning-color: #f59e0b;
+  --info-color: #3b82f6;
+}
+
+/* Thème clair */
+.light {
+  /* Couleurs de base */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f7f8;
+  --text-primary: #343541;
+  --text-secondary: #6e6e80;
+  --border-color: #e5e5e5;
+  
+  /* Éléments spécifiques */
+  --sidebar-bg: #f7f7f8;
+  --chat-bg: #ffffff;
+  --user-message-bg: #f7f7f8;
+  --ai-message-bg: #ffffff;
+  --input-bg: #ffffff;
+  
+  /* Boutons et interactions */
+  --button-bg: #19c37d;
+  --button-hover: #1a7f54;
+  --button-text: white;
+  --hover-bg: #ececf1;
+  --active-bg: #e5e5e5;
+  
+  /* Éléments UI */
+  --scrollbar-thumb: #c5c5d2;
+  --scrollbar-track: #f7f7f8;
+  --error-color: #ef4444;
+  --header-bg: #f7f7f8;
+  --header-text: #343541;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  
+  /* Nouvelles variables pour améliorer l'expérience */
+  --card-bg: #f0f0f0;
+  --tooltip-bg: #6e6e80;
+  --success-color: #19c37d;
+  --warning-color: #f59e0b;
+  --info-color: #3b82f6;
+}
+
+/* Styles pour les éléments spécifiques */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Personnalisation de la barre de défilement pour tous les navigateurs */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--button-bg);
+}
+
+/* Application des variables CSS */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.app-container {
+  background-color: var(--bg-primary);
+}
+
+.sidebar {
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.chat-container {
+  background-color: var(--chat-bg);
+}
+
+.chat-header {
+  background-color: var(--header-bg);
+  color: var(--header-text);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.message {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.message.user {
+  background-color: var(--user-message-bg);
+}
+
+.message.ai {
+  background-color: var(--ai-message-bg);
+}
+
+.input-container {
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+}
+
+.message-input {
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.send-button {
+  background-color: var(--button-bg);
+  color: var(--button-text);
+}
+
+.send-button:hover {
+  background-color: var(--button-hover);
+}
+
+.conversation-item {
+  color: var(--text-primary);
+}
+
+.conversation-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.conversation-item.active {
+  background-color: var(--active-bg);
+}
+
+.error-message {
+  color: var(--error-color);
+}
+
+/* Scrollbar personnalisée */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}

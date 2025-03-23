@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import ChatWindow from "./components/ChatWindow";
 import Sidebar from "./components/Sidebar";
+import ThemeToggle from "./components/ThemeToggle";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { getConversations, createNewConversation, deleteConversation, renameConversation } from "./services/storage";
 import "./App.css";
+import "./themes.css";
 
 // Icône pour le bouton de menu (responsive)
 const MenuIcon = () => (
@@ -13,7 +16,7 @@ const MenuIcon = () => (
   </svg>
 );
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [conversations, setConversations] = useState<{ id: string; title: string }[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -149,6 +152,9 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
+      {/* Bouton de basculement de thème */}
+      <ThemeToggle />
+      
       {/* Barre latérale */}
       <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <Sidebar
@@ -185,6 +191,15 @@ const App: React.FC = () => {
         />
       </div>
     </div>
+  );
+};
+
+// Composant racine avec le ThemeProvider
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 };
 

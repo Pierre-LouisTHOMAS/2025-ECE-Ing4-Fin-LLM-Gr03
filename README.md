@@ -53,19 +53,7 @@ Si le fichier requirements.txt n'existe pas, installez les dépendances suivante
 pip install fastapi uvicorn python-multipart PyPDF2 Pillow requests
 ```
 
-### 3. Configuration du modèle Qwen
-
-Pour utiliser le modèle Qwen, vous devez :
-
-1. Créer un compte sur [Ollama](https://ollama.ai/) ou [Replicate](https://replicate.com/)
-2. Obtenir une clé API et la configurer dans le fichier `.env` à la racine du dossier Backend :
-
-```
-API_KEY=votre_clé_api
-API_BASE_URL=url_de_l_api
-```
-
-### 4. Configuration du frontend
+### 3. Configuration du frontend
 
 ```bash
 cd frontend

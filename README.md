@@ -81,7 +81,7 @@ Dans un premier terminal :
 ```bash
 # Depuis la racine du projet, avec l'environnement virtuel activé
 cd Backend
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn Backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Le serveur backend sera accessible à l'adresse : http://localhost:8000

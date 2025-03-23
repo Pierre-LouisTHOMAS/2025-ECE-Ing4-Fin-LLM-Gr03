@@ -227,7 +227,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
           
           // Sauvegarde de la conversation
           if (conversationId) {
-            saveConversation(conversationId, `Conversation du ${new Date().toLocaleString('fr-FR')}`, updatedMessages)
+            // Utiliser le titre existant de la conversation (fourni via les props)
+            saveConversation(conversationId, conversationTitle || `Conversation ${conversationId}`, updatedMessages)
               .then(() => {
                 if (onConversationUpdated) {
                   onConversationUpdated();
@@ -269,7 +270,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
           
           // Sauvegarde de la conversation
           if (conversationId) {
-            saveConversation(conversationId, `Conversation du ${new Date().toLocaleString('fr-FR')}`, updatedMessages)
+            // Utiliser le titre existant de la conversation (fourni via les props)
+            saveConversation(conversationId, conversationTitle || `Conversation ${conversationId}`, updatedMessages)
               .then(() => {
                 if (onConversationUpdated) {
                   onConversationUpdated();

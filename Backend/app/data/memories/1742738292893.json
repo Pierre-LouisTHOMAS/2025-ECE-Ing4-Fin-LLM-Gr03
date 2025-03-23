@@ -1,0 +1,18 @@
+{
+  "title": "Test_Image_20000",
+  "created_at": "2025-03-23T13:58:30.046Z",
+  "updated_at": "2025-03-23T14:58:41.229528",
+  "messages": [
+    {
+      "message_id": "1742738302441-0hg7oqhc-user",
+      "sender": "user",
+      "text": "J'ai envoyé une image: Image_5.png\n\nMa question: Décris moi ce qui se passe sur cette image"
+    },
+    {
+      "message_id": "1742738310043-p9wsxjjn-ai",
+      "sender": "ai",
+      "text": "L'image montre deux verres de bière de la marque \"Suntory The Premium\" posés sur une table. Les verres sont remplit de bière claire et légèrement bulleuse, avec une mousse blanche à la surface. Les mains des personnes qui tiennent les verres sont également visibles, une main tenant chaque verre. L'atmosphère semble détente et conviviale, probablement dans un bar ou un restaurant."
+    }
+  ],
+  "memories": {}
+}

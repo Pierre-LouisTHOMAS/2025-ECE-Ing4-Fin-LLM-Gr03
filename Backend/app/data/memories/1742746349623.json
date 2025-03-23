@@ -1,0 +1,38 @@
+{
+  "title": "Poubelle",
+  "created_at": "2025-03-23T16:13:34.382Z",
+  "updated_at": "2025-03-23T17:14:59.798625",
+  "messages": [
+    {
+      "message_id": "1742746356282-jbyqyc9f-user",
+      "sender": "user",
+      "text": "Coucou donne moi nu code python pour dire bonjour"
+    },
+    {
+      "message_id": "1742746361383-fmnd77wf-ai",
+      "sender": "ai",
+      "text": "Pour dire \"Coucou\" en Python, vous pouvez utiliser la fonction `print()`. Voici un exemple de code simple :\n\n```python\nprint(\"Coucou\")\n```\n\nSi vous voulez inclure une invite pour avoir \"bonjour\", vous pouvez utiliser le mot `` de la bibliothèque `input()` pour obtenir des données à l'utilisateur. Voici un exemple :\n\n```python\nprint(\"Coucou !\")\nprint(\"Veuillez saisir votre nom :\")\nnom = input()\nprint(\"Bonjour, \" + nom)\n```\n\nEn utilisant ces deux exemples, vous pouvez avoir \"Coucou !\" suivi par \"Veuillez saisir votre nom :\" suivi de \"Bonjour, [nom]\"."
+    },
+    {
+      "message_id": "1742746386249-0or2rae2-user",
+      "sender": "user",
+      "text": "J'ai envoyé une image: Image_4.png\n\nMa question: analyse cette image et dis moi ce que tu voix"
+    },
+    {
+      "message_id": "1742746391989-uf9dba3r-ai",
+      "sender": "ai",
+      "text": "L'image montre une tasse de café espresso placée sur une assiette blanche. À côté de la tasse, il y a un tas de grains de café torréfiés, visibles à travers un sac en toile de jute. Le tout se trouve sur un fond en bois foncé."
+    },
+    {
+      "message_id": "1742746408080-9tzbcdm5-user",
+      "sender": "user",
+      "text": "J'ai envoyé une image: Image_1.png\n\nMa question: Analyse cette image"
+    },
+    {
+      "message_id": "1742746414381-q53auk3b-ai",
+      "sender": "ai",
+      "text": "L'image montre une voiture de sport rouge, spécifique à la marque Ferrari, positionnée sur une route en bordure de forêt verdoyante. La voiture semble être une LaFerrari, un modèle prestigieux de la gamme Ferrari. Le design de la voiture est caractéristique du style Ferrari, avec des éléments distinctifs comme les feux arrière en forme de \"W\" et le radiateur en carbone. Le véhicule est aligné perpendiculairement à la direction normale, ce qui permet de voir clairement ses caractéristiques distinctives."
+    }
+  ],
+  "memories": {}
+}

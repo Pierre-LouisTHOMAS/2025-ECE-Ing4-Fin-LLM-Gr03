@@ -1,0 +1,65 @@
+.theme-toggle-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  box-shadow: 0 2px 5px var(--shadow-color);
+  overflow: hidden;
+}
+
+.theme-toggle-button:hover {
+  background-color: var(--hover-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.theme-toggle-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--button-bg), 0 2px 5px var(--shadow-color);
+}
+
+.theme-toggle-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px var(--shadow-color);
+}
+
+/* Animation lors du changement de thème */
+.theme-toggle-button svg {
+  transition: transform 0.5s ease, opacity 0.3s ease;
+}
+
+.theme-toggle-button:active svg {
+  transform: rotate(180deg);
+}
+
+/* Effet de pulsation pour indiquer le changement */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.theme-toggle-button.theme-changing svg {
+  animation: pulse 0.5s ease;
+}
+
+/* Styles spécifiques pour le mode sombre/clair */
+.dark .theme-toggle-button {
+  background-color: var(--card-bg);
+}
+
+.light .theme-toggle-button {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+}

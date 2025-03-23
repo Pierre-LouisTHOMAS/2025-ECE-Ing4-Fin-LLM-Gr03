@@ -50,7 +50,7 @@ pip install -r requirements.txt
 Si le fichier requirements.txt n'existe pas, installez les dépendances suivantes :
 
 ```bash
-pip install fastapi uvicorn python-multipart PyPDF2 Pillow requests
+pip install fastapi uvicorn python-multipart PyPDF2 Pillow requests fastAPI mlx mlx_vlm
 ```
 
 ### 3. Configuration du frontend

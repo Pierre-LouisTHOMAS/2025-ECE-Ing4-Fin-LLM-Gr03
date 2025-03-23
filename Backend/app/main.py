@@ -14,9 +14,6 @@ from PyPDF2 import PdfReader
 # Import du module MLX-VLM personnalisé pour le modèle multimodal
 from .mlx_vlm_model import get_model
 
-# Utilisation du nouveau service de mémoire JSON
-from . import json_memory_service as memory_service
-
 # Initialisation de FastAPI
 app = FastAPI(title="Qwen Chat API")
 
@@ -31,8 +28,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# S'assurer que le répertoire de mémoire existe
-os.makedirs(memory_service.MEMORY_DIR, exist_ok=True)
+# Création du répertoire pour les fichiers temporaires
+os.makedirs("./temp", exist_ok=True)
 
 # Chargement du modèle Qwen2.5-VL-3B-Instruct-8bit optimisé pour Apple Silicon
 print("Chargement du modèle Qwen2.5-VL-3B-Instruct-8bit optimisé pour Apple Silicon...")
@@ -101,49 +98,27 @@ def generate_model_response(input_text, image_path=None):
 # Endpoint pour le chat avec l'IA (texte)
 @app.post("/chat", response_model=Dict[str, Any])
 def chat(request: Dict[str, Any]):
+    """Endpoint pour le chat avec l'IA (texte uniquement)"""
     try:
-        # Extraire et stocker les informations du message utilisateur
-        conversation_id = request.get("conversation_id", "default_conversation")
-        
-        # Traiter le message pour extraire les informations importantes
+        # Récupérer le message de l'utilisateur
         message = request.get("message", "")
-        if message:
-            # Extraire et stocker les informations du message utilisateur
-            extracted_info = memory_service.process_user_message(conversation_id=conversation_id, message=message)
-            print(f"Informations extraites du message: {extracted_info}")
+        if not message:
+            return {"response": "Veuillez fournir un message."}
         
-        # Récupérer le contexte de la conversation (informations mémorisées)
-        conversation_context = memory_service.get_conversation_context(conversation_id=conversation_id)
-        
-        # Récupérer les messages récents (5 derniers messages)
-        recent_messages = memory_service.get_recent_messages(conversation_id=conversation_id, limit=5)
-        
-        # Prompt d'entrée amélioré avec des instructions claires pour le modèle
-        system_prompt = """Tu es un assistant IA français serviable, clair et concis basé sur le modèle Qwen. 
+        # Prompt d'entrée avec contexte personnalisé et instructions claires pour le modèle
+        system_prompt = """Tu es Lepl, un modèle d'IA français créé par 3 jeunes pour le cours d'IA. 
 
 Règles importantes:
-1. Réponds en français de manière naturelle et directe
-2. Évite les instructions ou méta-commentaires dans tes réponses
-3. Fournis des réponses utiles et pertinentes
-4. Si tu connais le nom de l'utilisateur, utilise-le pour personnaliser tes réponses
-5. Utilise les informations mémorisées sur l'utilisateur pour adapter tes réponses à ses préférences
-6. Ne répète pas explicitement les informations mémorisées, utilise-les subtilement
-7. Sois concis et précis dans tes réponses
+1. Tu dois être synthétique et clair dans tes réponses
+2. Si tu ne connais pas la réponse, dis-le clairement
+3. Réponds en français de manière naturelle et directe
+4. Évite les instructions ou méta-commentaires dans tes réponses
+5. Fournis des réponses utiles et pertinentes
+6. Sois concis et précis dans tes réponses
 """
         
-        # Construction du prompt avec le contexte et l'historique récent
+        # Construction du prompt simple
         prompt = f"{system_prompt}\n\n"
-        
-        # Ajouter le contexte de la conversation s'il existe
-        if conversation_context:
-            prompt += f"{conversation_context}\n\n"
-        
-        # Ajouter les messages récents
-        for msg in recent_messages:
-            if msg["role"] == "user":
-                prompt += f"Utilisateur: {msg['content']}\n"
-            else:  # assistant
-                prompt += f"Assistant: {msg['content']}\n"
         
         # Ajout du message actuel
         prompt += f"Utilisateur: {message}\nAssistant:"
@@ -154,8 +129,6 @@ Règles importantes:
         # Génération de la réponse
         response_text = generate_model_response(prompt)
         
-        # Note: La mémorisation des messages a été supprimée pour optimiser le service
-
         return {"response": response_text}
 
     except Exception as e:
@@ -194,34 +167,20 @@ async def chat_image(
             os.remove(temp_image_path)  # Suppression du fichier temporaire
             return {"response": f"Erreur: L'image n'est pas valide. Détails: {str(e)}"}
         
-        # Traiter la question pour extraire les informations importantes
-        if question:
-            # Extraire et stocker les informations du message utilisateur
-            extracted_info = memory_service.process_user_message(conversation_id=conversation_id, message=question)
-            print(f"Informations extraites du message (PDF): {extracted_info}")
-        
-        # Récupérer le contexte de la conversation (informations mémorisées)
-        conversation_context = memory_service.get_conversation_context(conversation_id=conversation_id)
-        
-        # Prompt d'entrée pour l'analyse d'image
-        system_prompt = """Tu es un assistant IA français serviable, clair et concis basé sur le modèle Qwen avec capacités de vision. 
+        # Prompt d'entrée pour l'analyse d'image avec contexte personnalisé
+        system_prompt = """Tu es Lepl, un modèle d'IA français créé par 3 jeunes pour le cours d'IA, avec capacités de vision. 
 
 Règles importantes:
-1. Analyse l'image fournie avec précision et réponds aux questions à son sujet
-2. Réponds en français de manière naturelle et directe
-3. Évite les instructions ou méta-commentaires dans tes réponses
-4. Si tu connais le nom de l'utilisateur, utilise-le pour personnaliser tes réponses
-5. Utilise les informations mémorisées sur l'utilisateur pour adapter tes réponses à ses préférences
-6. Ne répète pas explicitement les informations mémorisées, utilise-les subtilement
-7. Sois concis et précis dans tes réponses
+1. Tu dois être synthétique et clair dans tes réponses
+2. Si tu ne peux pas analyser correctement l'image, dis-le clairement
+3. Analyse l'image fournie avec précision et réponds aux questions à son sujet
+4. Réponds en français de manière naturelle et directe
+5. Évite les instructions ou méta-commentaires dans tes réponses
+6. Sois concis et précis dans tes réponses
 """
         
-        # Construction du prompt avec le contexte
+        # Construction du prompt simple
         prompt = f"{system_prompt}\n\n"
-        
-        # Ajouter le contexte de la conversation s'il existe
-        if conversation_context:
-            prompt += f"{conversation_context}\n\n"
         
         # Ajout de la question ou utilisation d'une question par défaut
         user_question = question if question else "Pourrais-tu décrire cette image et me dire ce que tu y vois?"
@@ -232,8 +191,6 @@ Règles importantes:
         
         # Génération de la réponse avec l'image
         response_text = generate_model_response(prompt, temp_image_path)
-        
-        # Note: La mémorisation des messages a été supprimée pour optimiser le service
         
         # Suppression du fichier temporaire après utilisation
         try:
@@ -277,34 +234,23 @@ async def chat_pdf(
         if len(pdf_text) > max_chars:
             pdf_text = pdf_text[:max_chars] + "...\n(Le document a été tronqué car il était trop long)"
         
-        # Traiter la question pour extraire les informations importantes
-        if question:
-            # Extraire et stocker les informations du message utilisateur
-            extracted_info = memory_service.process_user_message(conversation_id=conversation_id, message=question)
-            print(f"Informations extraites du message (PDF): {extracted_info}")
+        # Traitement simplifié sans stockage des informations
+        print(f"Traitement du PDF: {file.filename} avec la question: {question if question else 'Aucune question spécifiée'}")
         
-        # Récupérer le contexte de la conversation (informations mémorisées)
-        conversation_context = memory_service.get_conversation_context(conversation_id=conversation_id)
-        
-        # Prompt d'entrée avec le contenu du PDF
-        system_prompt = """Tu es un assistant IA français serviable, clair et concis basé sur le modèle Qwen. 
+        # Prompt d'entrée avec contexte personnalisé et contenu du PDF
+        system_prompt = """Tu es Lepl, un modèle d'IA français créé par 3 jeunes pour le cours d'IA. 
 
 Règles importantes:
-1. Analyse le document PDF fourni avec précision et réponds aux questions à son sujet
-2. Réponds en français de manière naturelle et directe
-3. Évite les instructions ou méta-commentaires dans tes réponses
-4. Si tu connais le nom de l'utilisateur, utilise-le pour personnaliser tes réponses
-5. Utilise les informations mémorisées sur l'utilisateur pour adapter tes réponses à ses préférences
-6. Ne répète pas explicitement les informations mémorisées, utilise-les subtilement
-7. Sois concis et précis dans tes réponses
+1. Tu dois être synthétique et clair dans tes réponses
+2. Si tu ne peux pas analyser correctement le document, dis-le clairement
+3. Analyse le document PDF fourni avec précision et réponds aux questions à son sujet
+4. Réponds en français de manière naturelle et directe
+5. Évite les instructions ou méta-commentaires dans tes réponses
+6. Sois concis et précis dans tes réponses
 """
         
-        # Construction du prompt avec le contexte
+        # Construction du prompt simple
         prompt = f"{system_prompt}\n\n"
-        
-        # Ajouter le contexte de la conversation s'il existe
-        if conversation_context:
-            prompt += f"{conversation_context}\n\n"
             
         # Ajouter le contenu du PDF
         prompt += f"Contenu du document PDF:\n{pdf_text}\n\n"
@@ -319,96 +265,37 @@ Règles importantes:
         # Génération de la réponse
         response_text = generate_model_response(prompt)
         
-        # Note: La mémorisation des messages a été supprimée pour optimiser le service
-        
         return {"response": response_text}
     
     except Exception as e:
         print(f"Erreur lors du traitement du PDF: {str(e)}")
         return {"response": f"Erreur lors du traitement du PDF: {str(e)}"}
 
-# Endpoints pour la gestion des conversations
+# Endpoint simple pour tester que l'API fonctionne
 @app.get("/conversations", response_model=List[Dict[str, Any]])
 def get_conversations():
-    """Récupère toutes les conversations en listant les fichiers JSON"""
-    conversations = []
-    # Parcourir tous les fichiers de mémoire
-    for memory_file in os.listdir(memory_service.MEMORY_DIR):
-        if memory_file.endswith(".json"):
-            conversation_id = memory_file.replace(".json", "")
-            try:
-                # Charger la mémoire de la conversation
-                memory = memory_service.load_memory(conversation_id)
-                # Créer un objet conversation à partir de la mémoire
-                conversation = {
-                    "id": conversation_id,
-                    "title": memory.get("title", f"Conversation {conversation_id}"),
-                    "created_at": memory.get("created_at", datetime.now().isoformat()),
-                    "updated_at": memory.get("updated_at", datetime.now().isoformat()),
-                    "memories_count": len(memory.get("memories", {}))
-                }
-                conversations.append(conversation)
-            except Exception as e:
-                print(f"Erreur lors du chargement de la conversation {conversation_id}: {e}")
-    
-    return conversations
-
-@app.get("/conversations/{conversation_id}", response_model=Dict[str, Any])
-def get_conversation(conversation_id: str):
-    """Récupère une conversation par son ID"""
-    try:
-        # Charger la mémoire de la conversation
-        memory = memory_service.load_memory(conversation_id)
-        # Vérifier si le fichier existe
-        memory_file = memory_service.get_memory_file_path(conversation_id)
-        if not memory_file.exists():
-            raise HTTPException(status_code=404, detail="Conversation non trouvée")
-            
-        # Créer un objet conversation à partir de la mémoire
-        conversation = {
-            "id": conversation_id,
-            "title": memory.get("title", f"Conversation {conversation_id}"),
-            "created_at": memory.get("created_at", datetime.now().isoformat()),
-            "updated_at": memory.get("updated_at", datetime.now().isoformat()),
-            "memories": memory.get("memories", {})
+    """Renvoie une liste de conversations factices pour compatibilité avec le frontend"""
+    return [
+        {
+            "id": "default_conversation",
+            "title": "Nouvelle conversation",
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat()
         }
-        return conversation
-    except Exception as e:
-        raise HTTPException(status_code=404, detail=f"Conversation non trouvée: {str(e)}")
+    ]
 
 @app.post("/conversations", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 def create_conversation(conversation: Dict[str, Any]):
-    """Crée une nouvelle conversation"""
+    """Crée une nouvelle conversation factice"""
     conversation_id = conversation.get("id", str(uuid.uuid4()))
     title = conversation.get("title", f"Conversation {conversation_id}")
-    
-    # Initialiser la mémoire de la conversation
-    memory = {
-        "conversation_id": conversation_id,
-        "title": title,
-        "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat(),
-        "memories": {}
-    }
-    
-    # Sauvegarder la mémoire
-    if not memory_service.save_memory(conversation_id, memory):
-        raise HTTPException(status_code=500, detail="Erreur lors de la création de la conversation")
     
     return {
         "id": conversation_id,
         "title": title,
-        "created_at": memory["created_at"],
-        "updated_at": memory["updated_at"]
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat()
     }
-
-@app.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_conversation(conversation_id: str):
-    """Supprime une conversation"""
-    success = memory_service.delete_memory(conversation_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Conversation non trouvée")
-    return {"status": "success"}
 
 # Endpoints pour la gestion des souvenirs de conversation
 @app.get("/conversations/{conversation_id}/memories", response_model=Dict[str, Any])

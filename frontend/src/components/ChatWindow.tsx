@@ -60,12 +60,11 @@ interface MessageType {
 interface ChatWindowProps {
   conversationId: string | null;
   onConversationUpdated?: () => void;
+  conversationTitle?: string;
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationUpdated }) => {
-  const [messages, setMessages] = useState<MessageType[]>([
-    { id: 1, sender: "ai", text: "Bonjour ! Je suis Qwen, votre assistant IA. Comment puis-je vous aider aujourd'hui ?" }
-  ]);
+const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationUpdated, conversationTitle }) => {
+  const [messages, setMessages] = useState<MessageType[]>([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,10 +90,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
   useEffect(() => {
     const loadConversationMessages = async () => {
       if (!conversationId) {
-        // Si aucune conversation n'est sélectionnée, afficher le message d'accueil
-        setMessages([
-          { id: Date.now(), sender: "ai", text: "Bonjour ! Je suis Qwen, votre assistant IA. Comment puis-je vous aider aujourd'hui ?" }
-        ]);
+        // Si aucune conversation n'est sélectionnée, afficher une conversation vide
+        setMessages([]);
         return;
       }
       
@@ -109,10 +106,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
           }));
           setMessages(messagesWithUniqueIds);
         } else {
-          // Si la conversation existe mais n'a pas de messages, afficher le message d'accueil
-          setMessages([
-            { id: Date.now(), sender: "ai", text: "Bonjour ! Je suis Qwen, votre assistant IA. Comment puis-je vous aider aujourd'hui ?" }
-          ]);
+          // Si la conversation existe mais n'a pas de messages, afficher une conversation vide
+          setMessages([]);
         }
       } catch (error) {
         console.error("Erreur lors du chargement des messages :", error);
@@ -415,7 +410,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ conversationId, onConversationU
     <div className="flex flex-col h-full">
       {/* En-tête du chat */}
       <div className="chat-header">
-        Qwen Chat
+        {conversationTitle || "Nouvelle conversation"}
       </div>
       
       {/* Zone des messages */}

@@ -176,7 +176,8 @@ const App: React.FC = () => {
         
         {/* Fenêtre de chat */}
         <ChatWindow 
-          conversationId={currentConversationId} 
+          conversationId={currentConversationId}
+          conversationTitle={currentConversationId ? conversations.find(conv => conv.id === currentConversationId)?.title : "Nouvelle conversation"}
           onConversationUpdated={() => {
             // Rafraîchir la liste des conversations après une mise à jour
             getConversations().then(setConversations);

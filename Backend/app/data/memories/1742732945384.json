@@ -1,7 +1,7 @@
 {
   "title": "test_Basique",
-  "created_at": "2025-03-23T12:29:34.426Z",
-  "updated_at": "2025-03-23T13:29:34.429977",
+  "created_at": "2025-03-23T12:31:14.850Z",
+  "updated_at": "2025-03-23T13:31:14.853067",
   "messages": [
     {
       "message_id": "1742732949824-jmm43htl-user",
@@ -22,6 +22,36 @@
       "message_id": "1742732974424-g7ofycgp-ai",
       "sender": "ai",
       "text": "Bonjour Pierre-Louis, j'apprécie votre nom. Je suis Lepl, votre assistant IA. Comment puis-je vous aider aujourd'hui ?"
+    },
+    {
+      "message_id": "1742733039333-yg6588ip-user",
+      "sender": "user",
+      "text": "J'aimerais que tu me donnes un code python pour ecrire \"Bonjour je suis Pierre-Louis\" en python"
+    },
+    {
+      "message_id": "1742733042356-ig64n1hb-ai",
+      "sender": "ai",
+      "text": "Bien sûr, voici un code Python simple pour imprimer la phrase \"Bonjour je suis Pierre-Louis\" :\n\n```python\nprint(\"Bonjour je suis Pierre-Louis\")\n```\n\nVous pouvez copier et coller ce code dans votre environnement Python pour l'exécuter."
+    },
+    {
+      "message_id": "1742733059329-ts47veib-user",
+      "sender": "user",
+      "text": "J'ai quel age déjà ?"
+    },
+    {
+      "message_id": "1742733061869-0vj85u1h-ai",
+      "sender": "ai",
+      "text": "Je suis désolé, mais je ne peux pas déterminer l'âge d'un utilisateur sans plus de détails."
+    },
+    {
+      "message_id": "1742733072509-ewqtbpf5-user",
+      "sender": "user",
+      "text": "Est ce que tu te rappelles de mon prénom ?"
+    },
+    {
+      "message_id": "1742733074848-9kn6t2jr-ai",
+      "sender": "ai",
+      "text": "Oui, mon nom est Lepl. Combien puis-je vous aider ?"
     }
   ],
   "memories": {}

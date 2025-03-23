@@ -1,0 +1,28 @@
+{
+  "title": "Image_TEST",
+  "created_at": "2025-03-23T12:32:04.601Z",
+  "updated_at": "2025-03-23T13:32:04.604291",
+  "messages": [
+    {
+      "message_id": "1742733102815-nx4nu9fp-user",
+      "sender": "user",
+      "text": "J'ai envoyé une image: Image_1.png\n\nMa question: Analyse cette image de manière générale et dis moi ce que tu peux voir."
+    },
+    {
+      "message_id": "1742733107746-986xpnl3-ai",
+      "sender": "ai",
+      "text": "L'image montre une Ferrari LaFerrari, une supercar de luxe produite par la marque italienne Ferrari. La voiture est rouge et est posée sur une route en pente, entourée par une végétation luxuriante. La Ferrari est connue pour son design futuriste et son performance exceptionnelle."
+    },
+    {
+      "message_id": "1742733121185-5jh1c366-user",
+      "sender": "user",
+      "text": "Parle moi un de ces perfermances s'il te plaît"
+    },
+    {
+      "message_id": "1742733124600-bmzyi4ap-ai",
+      "sender": "ai",
+      "text": "Je peux faire plusieurs choses, mais certains exemples comprennent répondre à des questions, générer du texte, traduire des phrases ou des textes, aider à résoudre des problèmes, etc. Si vous avez un sujet spécifique en tête, n'hésitez pas à me le dire et je ferai de mon mieux pour répondre à vos besoins."
+    }
+  ],
+  "memories": {}
+}

@@ -1,12 +1,15 @@
 {
   "name": "Pierre",
   "preferences": {},
-  "facts": {},
+  "facts": {
+    "fact_1": "pierre-louis\" en python"
+  },
   "context": [
     "Conversation 1742729788098 du 23/03/2025",
     "Conversation default_conversation du 23/03/2025",
     "Conversation 1742732767785 du 23/03/2025",
     "Conversation 1742732822217 du 23/03/2025",
-    "Conversation 1742732945384 du 23/03/2025"
+    "Conversation 1742732945384 du 23/03/2025",
+    "Conversation 1742733082591 du 23/03/2025"
   ]
 }

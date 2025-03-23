@@ -353,16 +353,101 @@ def get_conversations():
 
 @app.post("/conversations", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 def create_conversation(conversation: Dict[str, Any]):
-    """Crée une nouvelle conversation factice"""
-    conversation_id = conversation.get("id", str(uuid.uuid4()))
-    title = conversation.get("title", f"Conversation {conversation_id}")
-    
-    return {
-        "id": conversation_id,
-        "title": title,
-        "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat()
-    }
+    """Crée une nouvelle conversation et la sauvegarde sur le serveur"""
+    try:
+        # Récupérer les données de la conversation
+        conversation_id = conversation.get("id", str(uuid.uuid4()))
+        title = conversation.get("title", f"Conversation {conversation_id}")
+        created_at = conversation.get("created_at", datetime.now().isoformat())
+        updated_at = conversation.get("updated_at", datetime.now().isoformat())
+        messages = conversation.get("messages", [])
+        
+        # Préparer les données à sauvegarder
+        memory = {
+            "title": title,
+            "created_at": created_at,
+            "updated_at": updated_at,
+            "messages": messages,
+            "memories": {}
+        }
+        
+        # Sauvegarder la conversation
+        if memory_service.save_memory(conversation_id, memory):
+            print(f"Conversation {conversation_id} créée avec succès")
+            return {
+                "id": conversation_id,
+                "title": title,
+                "created_at": created_at,
+                "updated_at": updated_at,
+                "messages": messages
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Erreur lors de la création de la conversation")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la création de la conversation: {str(e)}")
+
+@app.get("/conversations/{conversation_id}", response_model=Dict[str, Any])
+def get_conversation(conversation_id: str):
+    """Récupère une conversation spécifique"""
+    try:
+        # Vérifier si le fichier de conversation existe
+        memory_file = memory_service.get_memory_file_path(conversation_id)
+        if not memory_file.exists():
+            raise HTTPException(status_code=404, detail="Conversation non trouvée")
+        
+        # Charger la mémoire de la conversation
+        memory = memory_service.load_memory(conversation_id)
+        
+        # Formater les données pour le frontend
+        return {
+            "id": conversation_id,
+            "title": memory.get("title", f"Conversation {conversation_id}"),
+            "created_at": memory.get("created_at", datetime.now().isoformat()),
+            "updated_at": memory.get("updated_at", datetime.now().isoformat()),
+            "messages": memory.get("messages", [])
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération de la conversation: {str(e)}")
+
+@app.put("/conversations/{conversation_id}", response_model=Dict[str, Any])
+def update_conversation(conversation_id: str, conversation_data: Dict[str, Any]):
+    """Met à jour une conversation existante"""
+    try:
+        # Vérifier si le fichier de conversation existe
+        memory_file = memory_service.get_memory_file_path(conversation_id)
+        if not memory_file.exists():
+            raise HTTPException(status_code=404, detail="Conversation non trouvée")
+        
+        # Charger la mémoire de la conversation
+        memory = memory_service.load_memory(conversation_id)
+        
+        # Mettre à jour les champs fournis
+        if "title" in conversation_data:
+            memory["title"] = conversation_data["title"]
+        
+        if "messages" in conversation_data:
+            memory["messages"] = conversation_data["messages"]
+            
+        # Mettre à jour la date de modification
+        memory["updated_at"] = datetime.now().isoformat()
+        
+        # Sauvegarder les modifications
+        if memory_service.save_memory(conversation_id, memory):
+            return {
+                "id": conversation_id,
+                "title": memory["title"],
+                "created_at": memory.get("created_at", datetime.now().isoformat()),
+                "updated_at": memory["updated_at"],
+                "messages": memory.get("messages", [])
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Erreur lors de la sauvegarde de la conversation")
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la mise à jour de la conversation: {str(e)}")
 
 # Endpoints pour la gestion des souvenirs de conversation
 @app.get("/conversations/{conversation_id}/memories", response_model=Dict[str, Any])
@@ -544,6 +629,26 @@ def get_memory_context():
     """Génère un contexte formaté pour le modèle basé sur les mémoires"""
     context = memory_service.get_memory_context()
     return {"context": context}
+
+# Endpoint pour supprimer une conversation
+@app.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_conversation(conversation_id: str):
+    """Supprime une conversation et tous ses souvenirs"""
+    try:
+        # Vérifier si le fichier de conversation existe
+        memory_file = memory_service.get_memory_file_path(conversation_id)
+        if not memory_file.exists():
+            raise HTTPException(status_code=404, detail="Conversation non trouvée")
+        
+        # Supprimer le fichier
+        os.remove(memory_file)
+        print(f"Conversation {conversation_id} supprimée avec succès")
+        
+        return {"status": "success"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression de la conversation: {str(e)}")
 
 # Route de test
 @app.get("/")

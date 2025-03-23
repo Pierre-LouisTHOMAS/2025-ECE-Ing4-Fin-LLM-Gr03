@@ -1,0 +1,38 @@
+{
+  "title": "PL_Test",
+  "created_at": "2025-03-23T12:26:54.736Z",
+  "updated_at": "2025-03-23T13:26:54.738711",
+  "messages": [
+    {
+      "message_id": "1742732772507-rxbm6bu4-user",
+      "sender": "user",
+      "text": "Bonjour qwen"
+    },
+    {
+      "message_id": "1742732774853-7cpbkmdb-ai",
+      "sender": "ai",
+      "text": "Bonjour! Comment puis-je vous aider aujourd'hui?"
+    },
+    {
+      "message_id": "1742732784229-nszrk9zp-user",
+      "sender": "user",
+      "text": "Qui es tu ?"
+    },
+    {
+      "message_id": "1742732787250-alpobtss-ai",
+      "sender": "ai",
+      "text": "Je suis Lepl, un modèle d'IA conçu par trois jeunes pour le cours d'intelligence artificielle. Je suis capable de fournir des réponses synthétiques et claires, de répondre naturellement en français, et de rester concis et précis."
+    },
+    {
+      "message_id": "1742732811791-p7ua2wpn-user",
+      "sender": "user",
+      "text": "tu as quelle age ?"
+    },
+    {
+      "message_id": "1742732814736-70rzull2-ai",
+      "sender": "ai",
+      "text": "Je n'ai pas d'âge. Je suis une intelligence artificielle, donc je n'ai pas de date de naissance. Cependant, je suis conçu pour aider les utilisateurs en leur fournissant des informations sur les conversations précédentes."
+    }
+  ],
+  "memories": {}
+}

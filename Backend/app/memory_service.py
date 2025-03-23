@@ -168,6 +168,58 @@ class MemoryService:
                 
         return context
 
+    def get_memory_file_path(self, conversation_id: str):
+        """Retourne le chemin du fichier de mémoire pour une conversation"""
+        from pathlib import Path
+        # S'assurer que le répertoire existe
+        os.makedirs(MEMORY_DIR, exist_ok=True)
+        return Path(os.path.join(MEMORY_DIR, f"{conversation_id}.json"))
+
+    def load_memory(self, conversation_id: str) -> Dict[str, Any]:
+        """Charge la mémoire d'une conversation depuis le fichier"""
+        try:
+            memory_file = self.get_memory_file_path(conversation_id)
+            if memory_file.exists():
+                with open(memory_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            else:
+                # Retourner une mémoire vide si le fichier n'existe pas
+                return {
+                    "title": f"Conversation {conversation_id}",
+                    "created_at": datetime.datetime.now().isoformat(),
+                    "updated_at": datetime.datetime.now().isoformat(),
+                    "messages": [],
+                    "memories": {}
+                }
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Erreur lors du chargement de la mémoire {conversation_id}: {str(e)}")
+            # Retourner une mémoire vide en cas d'erreur
+            return {
+                "title": f"Conversation {conversation_id}",
+                "created_at": datetime.datetime.now().isoformat(),
+                "updated_at": datetime.datetime.now().isoformat(),
+                "messages": [],
+                "memories": {}
+            }
+
+    def save_memory(self, conversation_id: str, memory: Dict[str, Any]) -> bool:
+        """Sauvegarde la mémoire d'une conversation dans un fichier"""
+        try:
+            # S'assurer que le répertoire existe
+            os.makedirs(MEMORY_DIR, exist_ok=True)
+            
+            # Chemin du fichier de mémoire
+            memory_file = self.get_memory_file_path(conversation_id)
+            
+            # Sauvegarder la mémoire
+            with open(memory_file, 'w', encoding='utf-8') as f:
+                json.dump(memory, f, ensure_ascii=False, indent=2)
+            
+            return True
+        except Exception as e:
+            print(f"Erreur lors de la sauvegarde de la mémoire {conversation_id}: {str(e)}")
+            return False
+
     def get_all_conversations(self) -> Dict[str, Any]:
         """Récupère toutes les conversations enregistrées"""
         conversations = {}

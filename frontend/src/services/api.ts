@@ -392,32 +392,54 @@ export const saveConversationWithMessages = async (
   title: string,
   messages: { message_id: string | number; sender: "user" | "ai"; text: string }[]
 ): Promise<Conversation | null> => {
-  try {
-    // Vérifier que l'ID est une chaîne valide
-    if (!id) {
-      console.error("ID de conversation invalide");
-      return null;
-    }
-    
-    // Formater les données selon ce que le backend attend
-    const data = {
-      id,
-      title,
-      created_at: new Date().toISOString(),
-      messages: messages.map(msg => ({
-        message_id: msg.message_id,
-        sender: msg.sender,
-        text: msg.text
-      }))
-    };
-    
-    console.log(`💾 Tentative de sauvegarde de la conversation ${id} avec ${messages.length} messages`);
-    
-    const response = await axios.post<Conversation>(`${CONVERSATIONS_URL}/${id}/save`, data);
-    console.log("💾 Conversation sauvegardée avec succès sur le serveur :", response.data);
-    return response.data;
-  } catch (error) {
-    console.error(`❌ Erreur lors de la sauvegarde de la conversation ${id} :`, error);
+  // Vérifier que l'ID est une chaîne valide
+  if (!id) {
+    console.error("ID de conversation invalide");
     return null;
   }
+  
+  return retryWithDelay(async () => {
+    try {
+      // Formater les données selon ce que le backend attend
+      const data = {
+        id,
+        title,
+        created_at: new Date().toISOString(),
+        messages: messages.map(msg => ({
+          message_id: msg.message_id,
+          sender: msg.sender,
+          text: msg.text
+        }))
+      };
+      
+      console.log(`💾 Tentative de sauvegarde de la conversation ${id} avec ${messages.length} messages`);
+      
+      const response = await apiClient.post<Conversation>(`/conversations/${id}/save`, data);
+      console.log("💾 Conversation sauvegardée avec succès sur le serveur :", response.data);
+      return response.data;
+    } catch (error: any) {
+      // Affichage détaillé de l'erreur pour faciliter le débogage
+      console.error(`❌ Erreur lors de la sauvegarde de la conversation ${id} :`, error);
+      
+      if (error.response) {
+        // La requête a été faite et le serveur a répondu avec un code d'état
+        console.error("Détails de l'erreur :", {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      } else if (error.request) {
+        // La requête a été faite mais aucune réponse n'a été reçue
+        console.error("Aucune réponse reçue :", error.request);
+      } else {
+        // Une erreur s'est produite lors de la configuration de la requête
+        console.error("Erreur de configuration :", error.message);
+      }
+      
+      throw error; // Propager l'erreur pour le mécanisme de nouvelle tentative
+    }
+  }, 3, 3000).catch(error => {
+    console.error(`🚫 Toutes les tentatives ont échoué pour saveConversationWithMessages ${id}`);
+    return null;
+  });
 };

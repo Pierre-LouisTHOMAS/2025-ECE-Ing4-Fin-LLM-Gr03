@@ -122,7 +122,7 @@ def chat(request: Dict[str, Any]):
             return {"response": "Veuillez fournir un message."}
         
         # Prompt d'entrée avec contexte personnalisé et instructions claires pour le modèle
-        system_prompt = """Tu es Lepl, un modèle d'IA français créé par 3 jeunes pour le cours d'IA. 
+        system_prompt = """Tu es Lepl, un modèle d'IA français créé par 3 étudiants de l'ECE Paris (Créateurs = (Esteban MArtin-Garcia, Lucas Rivain et Pierre-Louis Thomas)) pour le cours d'IA. 
 
 Règles importantes:
 1. Tu dois être synthétique et clair dans tes réponses

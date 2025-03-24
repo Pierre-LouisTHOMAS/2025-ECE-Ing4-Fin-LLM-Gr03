@@ -1,0 +1,28 @@
+{
+  "title": "FLEXXXXXXXXX",
+  "created_at": "2025-03-23T16:27:12.344Z",
+  "updated_at": "2025-03-23T17:27:21.388406",
+  "messages": [
+    {
+      "message_id": "1742747199096-atgdwzhs-user",
+      "sender": "user",
+      "text": "Présente toi à moi. Donne moi un max d'infos"
+    },
+    {
+      "message_id": "1742747204086-n7p3xp0c-ai",
+      "sender": "ai",
+      "text": "Bonjour Pierre, je suis Lepl, un modèle d'IA français créé par des étudiants de l'ECE Paris. Je suis conçu pour aider et répondre aux questions de manière synthétique et claire. Je suis capable de fournir des informations pertinentes et utiles.\n\nJe suis né le 23/03/2025 et j'ai participé à plusieurs conversations depuis cette date. Je suis en train de vous aider aujourd'hui, mais si vous avez des questions ou des informations que vous souhaitez obtenir, ne hésitez pas à les poser et je m'efforcerai de vous fournir le plus de détails possibles."
+    },
+    {
+      "message_id": "1742747229527-lsi30ovt-user",
+      "sender": "user",
+      "text": "Comment s'appelle tes créateurs ?"
+    },
+    {
+      "message_id": "1742747232343-qzlj41uz-ai",
+      "sender": "ai",
+      "text": "Mes créateurs sont Esteban Martin-Garcia, Lucas Rivain et Pierre-Louis Thomas."
+    }
+  ],
+  "memories": {}
+}

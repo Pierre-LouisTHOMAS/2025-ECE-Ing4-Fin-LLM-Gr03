@@ -1,180 +1,245 @@
-"""
-Service de gestion de la mémoire des conversations pour Qwen Chat.
-Ce module permet d'extraire, stocker et récupérer des informations importantes
-des conversations pour permettre au modèle de s'en souvenir.
-"""
-
+import os
+import json
+import datetime
+from typing import Dict, List, Any, Optional, Union
 import re
-from typing import List, Dict, Any, Optional, Tuple
-from sqlalchemy.orm import Session
-from . import crud, database, schema
 
-# Patrons de reconnaissance pour les informations personnelles
-PATTERNS = {
-    "name": [
-        r"(?:je m'appelle|mon nom est|c'est|moi c'est)\s+([A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+(?:\s+[A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+)?)",
-        r"(?:mon prénom est)\s+([A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+)"
-    ],
-    "age": [
-        r"(?:j'ai|mon âge est)\s+(\d+)\s+ans"
-    ],
-    "job": [
-        r"(?:je suis|je travaille comme|mon métier est)\s+([a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+(?:\s+[a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+){0,3})"
-    ],
-    "location": [
-        r"(?:j'habite à|je vis à|je suis de)\s+([A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+(?:\s+[a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+)?)"
-    ],
-    "preference": [
-        r"(?:j'aime|je préfère)\s+([a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+(?:\s+[a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+){0,5})"
-    ],
-    "dislike": [
-        r"(?:je n'aime pas|je déteste)\s+([a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+(?:\s+[a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+){0,5})"
-    ]
-}
+# Chemin vers le répertoire de stockage des mémoires
+MEMORY_DIR = "./Backend/app/data/memories"
 
-def extract_information(text: str) -> Dict[str, str]:
-    """
-    Extrait les informations personnelles d'un texte.
-    
-    Args:
-        text: Le texte à analyser
+# S'assurer que le répertoire existe
+os.makedirs(MEMORY_DIR, exist_ok=True)
+
+class MemoryService:
+    def __init__(self):
+        self.user_memory_file = os.path.join(MEMORY_DIR, "user_memory.json")
+        self._initialize_user_memory()
+
+    def _initialize_user_memory(self):
+        """Initialise le fichier de mémoire utilisateur s'il n'existe pas"""
+        if not os.path.exists(self.user_memory_file):
+            default_memory = {
+                "name": None,
+                "preferences": {},
+                "facts": {},
+                "context": []
+            }
+            with open(self.user_memory_file, 'w', encoding='utf-8') as f:
+                json.dump(default_memory, f, ensure_ascii=False, indent=2)
+
+    def _load_user_memory(self) -> Dict[str, Any]:
+        """Charge la mémoire utilisateur depuis le fichier"""
+        try:
+            with open(self.user_memory_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            self._initialize_user_memory()
+            return {
+                "name": None,
+                "preferences": {},
+                "facts": {},
+                "context": []
+            }
+
+    def _save_user_memory(self, memory: Dict[str, Any]):
+        """Sauvegarde la mémoire utilisateur dans le fichier"""
+        with open(self.user_memory_file, 'w', encoding='utf-8') as f:
+            json.dump(memory, f, ensure_ascii=False, indent=2)
+
+    def get_user_memory(self) -> Dict[str, Any]:
+        """Récupère toutes les mémoires de l'utilisateur"""
+        return self._load_user_memory()
+
+    def save_user_memory(self, key: str, value: Any) -> bool:
+        """
+        Sauvegarde une information dans la mémoire utilisateur
         
-    Returns:
-        Un dictionnaire contenant les informations extraites
-    """
-    extracted_info = {}
-    
-    # Cas spécial pour la détection du prénom
-    # Recherche directe dans le texte original pour préserver la casse
-    name_patterns = [
-        r"Je m'appelle ([A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+(?:[-\s]+[A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+)?)",
-        r"Mon nom est ([A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+(?:[-\s]+[A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+)?)",
-        r"Mon prénom est ([A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+(?:[-\s]+[A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+)?)",
-        r"Appelle-moi ([A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+(?:[-\s]+[A-Z][a-zéèêëàâäôöùûüÿçÉÈÊËÀÂÄÔÖÙÛÜŸÇ]+)?)"
-    ]
-    
-    for pattern in name_patterns:
-        matches = re.search(pattern, text)
-        if matches:
-            extracted_info["name"] = matches.group(1)
-            break
-    
-    # Normaliser le texte (mettre en minuscules) pour les autres patterns
-    normalized_text = text.lower()
-    
-    # Rechercher les informations avec les patrons
-    for info_type, patterns in PATTERNS.items():
-        # Si on a déjà trouvé le nom avec les patterns spéciaux, on saute
-        if info_type == "name" and "name" in extracted_info:
-            continue
+        Args:
+            key: Clé de la mémoire (ex: "name", "preferences.theme")
+            value: Valeur à stocker
             
-        for pattern in patterns:
-            matches = re.search(pattern, normalized_text)
-            if matches:
-                extracted_info[info_type] = matches.group(1)
-                # Pour le nom, on met la première lettre en majuscule
-                if info_type == "name":
-                    extracted_info[info_type] = extracted_info[info_type].capitalize()
-                break
-    
-    return extracted_info
-
-def process_user_message(db: Session, conversation_id: str, message: str) -> Dict[str, str]:
-    """
-    Traite un message utilisateur pour en extraire des informations et les stocker.
-    
-    Args:
-        db: Session de base de données
-        conversation_id: ID de la conversation
-        message: Message de l'utilisateur
+        Returns:
+            bool: Succès de l'opération
+        """
+        memory = self._load_user_memory()
         
-    Returns:
-        Dictionnaire des informations extraites et stockées
-    """
-    # Extraire les informations du message
-    extracted_info = extract_information(message)
-    
-    # Stocker les informations extraites
-    for key, value in extracted_info.items():
-        crud.create_or_update_memory(db, conversation_id, key, value)
-    
-    return extracted_info
-
-def get_conversation_context(db: Session, conversation_id: str) -> str:
-    """
-    Récupère le contexte de la conversation sous forme de texte formaté.
-    
-    Args:
-        db: Session de base de données
-        conversation_id: ID de la conversation
-        
-    Returns:
-        Texte formaté contenant les informations mémorisées
-    """
-    # Récupérer tous les souvenirs de la conversation
-    memories = crud.get_memories_as_dict(db, conversation_id)
-    
-    if not memories:
-        return ""
-    
-    # Formater les souvenirs en texte pour le modèle
-    context_parts = ["### Informations importantes à retenir sur l'utilisateur:"]
-    
-    # Mapping des clés en français
-    key_mapping = {
-        "name": "Nom",
-        "age": "Âge",
-        "job": "Profession",
-        "location": "Lieu de résidence",
-        "preference": "Préférence",
-        "dislike": "Aversion"
-    }
-    
-    # Instructions spéciales pour le modèle
-    if "name" in memories:
-        context_parts.append(f"- L'utilisateur s'appelle {memories['name']}. Utilise son prénom dans tes réponses pour personnaliser la conversation.")
-    
-    # Ajouter chaque information au contexte
-    for key, value in memories.items():
-        if key == "name":
-            continue  # Déjà traité spécialement ci-dessus
-        elif key in key_mapping:
-            context_parts.append(f"- {key_mapping[key]}: {value}")
+        # Gestion des clés imbriquées (ex: "preferences.theme")
+        if "." in key:
+            parts = key.split(".")
+            current = memory
+            for i, part in enumerate(parts):
+                if i == len(parts) - 1:
+                    current[part] = value
+                else:
+                    if part not in current or not isinstance(current[part], dict):
+                        current[part] = {}
+                    current = current[part]
         else:
-            context_parts.append(f"- {key}: {value}")
-    
-    # Ajouter une instruction finale
-    context_parts.append("Tu dois utiliser ces informations pour personnaliser tes réponses, mais sans les répéter explicitement à l'utilisateur.")
-    
-    return "\n".join(context_parts)
+            memory[key] = value
+            
+        self._save_user_memory(memory)
+        return True
 
-def get_recent_messages(db: Session, conversation_id: str, limit: int = 5) -> List[Dict[str, Any]]:
-    """
-    Récupère les messages récents d'une conversation.
-    
-    Args:
-        db: Session de base de données
-        conversation_id: ID de la conversation
-        limit: Nombre maximum de messages à récupérer
+    def extract_memories_from_conversation(self, conversation_id: str, messages: List[Dict[str, str]]) -> bool:
+        """
+        Extrait des informations importantes d'une conversation
         
-    Returns:
-        Liste des messages récents
-    """
-    # Récupérer tous les messages de la conversation
-    messages = crud.get_messages(db, conversation_id)
-    
-    # Trier les messages par ID (ordre chronologique)
-    messages.sort(key=lambda x: x.id)
-    
-    # Prendre les derniers messages
-    recent_messages = messages[-limit:] if len(messages) > limit else messages
-    
-    # Formater les messages
-    formatted_messages = []
-    for msg in recent_messages:
-        formatted_messages.append({
-            "role": "user" if msg.sender == "user" else "assistant",
-            "content": msg.text
-        })
-    
-    return formatted_messages
+        Args:
+            conversation_id: ID de la conversation
+            messages: Liste des messages de la conversation
+            
+        Returns:
+            bool: Succès de l'opération
+        """
+        memory = self._load_user_memory()
+        
+        # Extraction des informations personnelles
+        for msg in messages:
+            if msg["role"] == "user":
+                # Extraction du nom
+                name_patterns = [
+                    r"Je m'appelle ([A-Z][a-z]+)",
+                    r"Mon nom est ([A-Z][a-z]+)",
+                    r"([A-Z][a-z]+) est mon prénom"
+                ]
+                
+                for pattern in name_patterns:
+                    match = re.search(pattern, msg["content"])
+                    if match and match.group(1):
+                        memory["name"] = match.group(1)
+                
+                # Extraction des préférences
+                preference_patterns = [
+                    r"Je préfère ([^.,]+)",
+                    r"J'aime ([^.,]+)",
+                    r"Ma préférence est ([^.,]+)"
+                ]
+                
+                for pattern in preference_patterns:
+                    matches = re.finditer(pattern, msg["content"])
+                    for match in matches:
+                        if match.group(1):
+                            preference = match.group(1).strip().lower()
+                            memory["preferences"][f"preference_{len(memory['preferences']) + 1}"] = preference
+                
+                # Extraction des faits importants
+                if "je suis" in msg["content"].lower():
+                    facts = re.findall(r"je suis ([^.,]+)", msg["content"].lower())
+                    for fact in facts:
+                        fact = fact.strip()
+                        if fact:
+                            memory["facts"][f"fact_{len(memory['facts']) + 1}"] = fact
+        
+        # Ajout du contexte de la conversation
+        conversation_summary = f"Conversation {conversation_id} du {datetime.datetime.now().strftime('%d/%m/%Y')}"
+        if conversation_summary not in memory["context"]:
+            memory["context"].append(conversation_summary)
+            
+        self._save_user_memory(memory)
+        return True
+
+    def get_memory_context(self) -> str:
+        """
+        Génère un contexte formaté pour le modèle basé sur les mémoires
+        
+        Returns:
+            str: Contexte formaté
+        """
+        memory = self._load_user_memory()
+        context = "Informations importantes sur l'utilisateur:\n"
+        
+        if memory["name"]:
+            context += f"- Nom: {memory['name']}\n"
+        
+        if memory["preferences"]:
+            context += "- Préférences:\n"
+            for key, value in memory["preferences"].items():
+                context += f"  * {value}\n"
+        
+        if memory["facts"]:
+            context += "- Faits importants:\n"
+            for key, value in memory["facts"].items():
+                context += f"  * {value}\n"
+        
+        if memory["context"]:
+            context += "- Contexte supplémentaire:\n"
+            for item in memory["context"]:
+                context += f"  * {item}\n"
+                
+        return context
+
+    def get_memory_file_path(self, conversation_id: str):
+        """Retourne le chemin du fichier de mémoire pour une conversation"""
+        from pathlib import Path
+        # S'assurer que le répertoire existe
+        os.makedirs(MEMORY_DIR, exist_ok=True)
+        return Path(os.path.join(MEMORY_DIR, f"{conversation_id}.json"))
+
+    def load_memory(self, conversation_id: str) -> Dict[str, Any]:
+        """Charge la mémoire d'une conversation depuis le fichier"""
+        try:
+            memory_file = self.get_memory_file_path(conversation_id)
+            if memory_file.exists():
+                with open(memory_file, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            else:
+                # Retourner une mémoire vide si le fichier n'existe pas
+                return {
+                    "title": f"Conversation {conversation_id}",
+                    "created_at": datetime.datetime.now().isoformat(),
+                    "updated_at": datetime.datetime.now().isoformat(),
+                    "messages": [],
+                    "memories": {}
+                }
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Erreur lors du chargement de la mémoire {conversation_id}: {str(e)}")
+            # Retourner une mémoire vide en cas d'erreur
+            return {
+                "title": f"Conversation {conversation_id}",
+                "created_at": datetime.datetime.now().isoformat(),
+                "updated_at": datetime.datetime.now().isoformat(),
+                "messages": [],
+                "memories": {}
+            }
+
+    def save_memory(self, conversation_id: str, memory: Dict[str, Any]) -> bool:
+        """Sauvegarde la mémoire d'une conversation dans un fichier"""
+        try:
+            # S'assurer que le répertoire existe
+            os.makedirs(MEMORY_DIR, exist_ok=True)
+            
+            # Chemin du fichier de mémoire
+            memory_file = self.get_memory_file_path(conversation_id)
+            
+            # Sauvegarder la mémoire
+            with open(memory_file, 'w', encoding='utf-8') as f:
+                json.dump(memory, f, ensure_ascii=False, indent=2)
+            
+            return True
+        except Exception as e:
+            print(f"Erreur lors de la sauvegarde de la mémoire {conversation_id}: {str(e)}")
+            return False
+
+    def get_all_conversations(self) -> Dict[str, Any]:
+        """Récupère toutes les conversations enregistrées"""
+        conversations = {}
+        
+        try:
+            # Parcourir tous les fichiers dans le répertoire de mémoire
+            for filename in os.listdir(MEMORY_DIR):
+                # Ne pas inclure le fichier de mémoire utilisateur
+                if filename != "user_memory.json" and filename.endswith(".json"):
+                    # Extraire l'ID de conversation du nom de fichier
+                    conversation_id = filename.replace(".json", "")
+                    
+                    # Charger la mémoire de la conversation
+                    try:
+                        memory = self.load_memory(conversation_id)
+                        conversations[conversation_id] = memory
+                    except Exception as e:
+                        print(f"Erreur lors du chargement de la conversation {conversation_id}: {str(e)}")
+            
+            return conversations
+        except Exception as e:
+            print(f"Erreur lors de la récupération des conversations: {str(e)}")
+            return {}

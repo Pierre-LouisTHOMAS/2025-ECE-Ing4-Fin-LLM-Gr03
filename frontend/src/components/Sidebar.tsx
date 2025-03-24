@@ -218,7 +218,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       
       {/* Pied de page de la barre latérale */}
       <div className="sidebar-footer">
-        <p>Qwen Chat v1.0</p>
+        <p>Lepl Chat v1.0</p>
       </div>
       
       {/* Menu contextuel */}

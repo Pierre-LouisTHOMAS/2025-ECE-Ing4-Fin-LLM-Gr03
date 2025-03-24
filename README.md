@@ -16,7 +16,6 @@ Le projet est composé de deux parties principales :
 - **Analyse de documents PDF** : Support pour l'upload et l'analyse de fichiers PDF
 - **Système de mémoire** : L'IA retient les informations importantes sur l'utilisateur (prénom, préférences, etc.)
 - **Interface utilisateur intuitive** : Design moderne avec thème sombre
-- **Gestion des conversations** : Création et sauvegarde de conversations distinctes
 
 ## Prérequis
 
@@ -40,7 +39,7 @@ cd 2025-ECE-Ing4-Fin-LLM-Gr03
 ```bash
 # Créer et activer un environnement virtuel Python
 python -m venv .venv
-source .venv/bin/activate  # Sur Windows: .venv\Scripts\activate
+source .venv/bin/activate
 
 # Installer les dépendances
 cd Backend

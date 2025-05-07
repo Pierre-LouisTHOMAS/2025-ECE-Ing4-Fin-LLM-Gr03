@@ -37,11 +37,9 @@ cd 2025-ECE-Ing4-Fin-LLM-Gr03
 ### 2. Configuration du backend
 
 ```bash
-# Créer et activer un environnement virtuel Python
 python -m venv .venv
 source .venv/bin/activate
 
-# Installer les dépendances
 cd Backend
 pip install -r requirements.txt
 ```
@@ -66,7 +64,6 @@ npm install
 Dans un premier terminal :
 
 ```bash
-# Depuis la racine du projet, avec l'environnement virtuel activé
 uvicorn Backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 

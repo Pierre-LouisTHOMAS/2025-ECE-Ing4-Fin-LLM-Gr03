@@ -21,9 +21,10 @@ Le projet est composé de deux parties principales :
 
 Assurez-vous d'avoir installé les éléments suivants sur votre machine :
 
-- Python 3.10+ pour le backend
+- Python 3.10 pour le backend (spécifiquement cette version pour la compatibilité avec MLX)
 - Node.js 16+ et npm pour le frontend
 - Git pour cloner le dépôt
+- Mac avec puce Apple Silicon (M1/M2/M3) pour l'optimisation MLX
 
 ## Installation
 
@@ -36,9 +37,11 @@ cd 2025-ECE-Ing4-Fin-LLM-Gr03
 
 ### 2. Configuration du backend
 
+**Important** : Ce projet utilise MLX, une bibliothèque optimisée pour Apple Silicon. Assurez-vous d'utiliser Python 3.10 spécifiquement.
+
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python3.10 -m venv fresh_venv
+source fresh_venv/bin/activate
 
 cd Backend
 pip install -r requirements.txt
@@ -47,8 +50,10 @@ pip install -r requirements.txt
 Si le fichier requirements.txt n'existe pas, installez les dépendances suivantes :
 
 ```bash
-pip install fastapi uvicorn python-multipart PyPDF2 Pillow requests fastAPI mlx mlx_vlm
+pip install fastapi uvicorn python-multipart PyPDF2 Pillow requests mlx mlx_vlm
 ```
+
+**Note** : Si vous rencontrez des erreurs avec MLX, assurez-vous d'utiliser Python 3.10 et non Python 3.13 ou une autre version.
 
 ### 3. Configuration du frontend
 
@@ -61,11 +66,14 @@ npm install
 
 ### 1. Démarrer le backend
 
-Dans un premier terminal :
+Dans un premier terminal, assurez-vous d'activer l'environnement virtuel Python 3.10 :
 
 ```bash
-uvicorn Backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+source fresh_venv/bin/activate
+python -m uvicorn Backend.app.main:app --host 0.0.0.0 --port 8000
 ```
+
+**Note** : Utilisez `python -m uvicorn` plutôt que `uvicorn` directement pour garantir l'utilisation de la bonne version de Python.
 
 Le serveur backend sera accessible à l'adresse : http://localhost:8000
 

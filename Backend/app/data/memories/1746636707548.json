@@ -1,0 +1,18 @@
+{
+  "title": "Conversation 8",
+  "created_at": "2025-05-07T16:51:55.978Z",
+  "updated_at": "2025-05-07T18:51:55.981289",
+  "messages": [
+    {
+      "message_id": "1746636710846-pp4k027k-user",
+      "sender": "user",
+      "text": "Bonjour !"
+    },
+    {
+      "message_id": "1746636715972-pdz33get-ai",
+      "sender": "ai",
+      "text": "Bonjour Pierre ! Comment puis-je vous aider aujourd'hui ?"
+    }
+  ],
+  "memories": {}
+}
